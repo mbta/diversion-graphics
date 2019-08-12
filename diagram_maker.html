@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MBTA Diversion Graphic Tool</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
+</head>
+<body>
+    <div id="inputs" style="float: left; width: 30%;" onchange="draw()">
+        <div>
+            <label>Line Width</label>
+            <input type="number" id="width" value="1000" />
+        </div>
+        <div>
+            <label>Line Stroke</label>
+            <input type="number" id="line-stroke" value="20" />
+        </div>
+        <div>
+            <label>Line Dash Array</label>
+            <input type="text" id="line-dash-array" value="30, 10" />
+        </div>
+        <div>
+            <label>Line Extra Space</label>
+            <input type="number" id="line-extra-space" value="6" />
+        </div>
+        <div>
+            <label>Stations (one per line)</label><br />
+            <textarea id="stations" cols="20" rows="12"></textarea>
+        </div>
+        <div>
+            <label>Accessible Stations (one per line)</label><br />
+            <textarea id="accessible-stations" cols="20" rows="6"></textarea>
+        </div>
+        <div>
+            <label>Station Radius</label>
+            <input type="number" id="station-radius" value="24" />
+        </div>
+        <div>
+            <label>Station Stroke</label>
+            <input type="number" id="station-stroke" value="6" />
+        </div>
+        <div>
+            <label>Station Text Size</label>
+            <input type="number" id="station-text-size" value="24" />
+        </div>
+        <div>
+            <label>Left arrow?</label>
+            <input type="checkbox" id="left-arrow-present" checked />
+        </div>
+        <div>
+            <label>Left arrow width</label>
+            <input type="number" id="left-arrow-width" value="120" />
+        </div>
+        <div>
+            <label>Left arrow text</label>
+            <input type="text" id="left-arrow-text" value="RIVERSIDE" />
+        </div>
+        <div>
+            <label>Left arrow color</label>
+            <select id="left-arrow-color">
+                <option value="#00843D">Green Line</option>
+                <option value="#ED8B00">Orange Line</option>
+                <option value="#DA291C">Red Line</option>
+                <option value="#003DA5">Blue Line</option>
+                <option value="#80276C">Commuter Rail</option>
+                <option value="#7C878E">Silver Line</option>
+                <option value="#FFC72C">Bus</option>
+            </select>
+        </div>
+        <div>
+            <label>Right arrow?</label>
+            <input type="checkbox" id="right-arrow-present" checked />
+        </div>
+        <div>
+            <label>Right arrow width</label>
+            <input type="number" id="right-arrow-width" value="120" />
+        </div>
+        <div>
+            <label>Right arrow text</label>
+            <input type="text" id="right-arrow-text" value="PARK ST//& NORTH" />
+        </div>
+        <div>
+            <label>Right arrow color</label>
+            <select id="right-arrow-color">
+                <option value="#00843D">Green Line</option>
+                <option value="#ED8B00">Orange Line</option>
+                <option value="#DA291C">Red Line</option>
+                <option value="#003DA5">Blue Line</option>
+                <option value="#80276C">Commuter Rail</option>
+                <option value="#7C878E">Silver Line</option>
+                <option value="#FFC72C">Bus</option>
+            </select>
+        </div>
+        <div>
+            <label>Arrow Text Size</label>
+            <input type="number" id="arrow-text-size" value="16" />
+        </div>
+        <div>
+            <label>Skipped Stations (one per line)</label><br />
+            <textarea id="skipped-stations" cols="20" rows="6"></textarea>
+        </div>
+        <div>
+            <label>Padding</label>
+            <input type="number" id="padding" value="20" />
+        </div>
+        <br />
+        <div>
+            <label>Download width</label>
+            <input type="number" id="download-width" value="2600" />
+        </div>
+        <div>
+            <input type="submit" id="save" value="Save Diagram" onclick="save()" />
+        </div>
+    </div>
+
+    <div id="drawing" style="float: left; width: 70%;"></div>
+    <canvas id="canvas" style="opacity: 0;"></canvas>
+
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("stations").value = "NEWTON HIGHLANDS\nNEWTON CENTRE\nCHESTNUT HILL\nRESERVOIR\nBEACONSFIELD\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
+            document.getElementById("accessible-stations").value = "NEWTON CENTRE\nRESERVOIR\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
+            document.getElementById("skipped-stations").value = "BEACONSFIELD";
+            draw();
+        });
+
+        // Adapted from https://stackoverflow.com/questions/28226677/save-inline-svg-as-jpeg-png-svg
+        function save() {
+            draw();
+
+            var downloadWidth = parseInt(document.getElementById("download-width").value);
+
+            var svg = document.querySelector('svg');
+            var svgWidth = svg.width.baseVal.value;
+            var svgHeight = svg.height.baseVal.value;
+            var scaleFactor = downloadWidth / svgWidth;
+
+            var canvas = document.getElementById('canvas');
+            canvas.width = svgWidth * scaleFactor;
+            canvas.height = svgHeight * scaleFactor;
+
+            var ctx = canvas.getContext('2d');
+            ctx.scale(scaleFactor, scaleFactor);
+            var data = (new XMLSerializer()).serializeToString(svg);
+
+            var DOMURL = window.URL || window.webkitURL || window;
+
+            var img = new Image();
+            var svgBlob = new Blob([data], {type: 'image/svg+xml;charset=utf-8'});
+            var url = DOMURL.createObjectURL(svgBlob);
+
+            img.onload = function () {
+                ctx.drawImage(img, 0, 0);
+                DOMURL.revokeObjectURL(url);
+
+                var imgURI = canvas
+                    .toDataURL('image/png')
+                    .replace('image/png', 'image/octet-stream');
+
+                var evt = new MouseEvent('click', {
+                    view: window,
+                    bubbles: false,
+                    cancelable: true
+                });
+
+                var a = document.createElement('a');
+                a.setAttribute('download', 'shuttle-container.png');
+                a.setAttribute('href', imgURI);
+                a.setAttribute('target', '_blank');
+
+                a.dispatchEvent(evt);
+            };
+
+            img.src = url;
+        }
+
+        function draw() {
+            // Clear existing diagram
+            document.getElementById("drawing").innerHTML = "";
+
+            // Get inputs
+            var padding = parseInt(document.getElementById("padding").value);
+            var width = parseInt(document.getElementById("width").value);
+            var lineExtraSpace = parseInt(document.getElementById("line-extra-space").value);
+
+            var stations = document.getElementById("stations").value.split("\n");
+            var accessibileStations = document.getElementById("accessible-stations").value.split("\n");
+            var skippedStations = document.getElementById("skipped-stations").value.split("\n");
+
+            var arrowTextSize = parseInt(document.getElementById("arrow-text-size").value);
+            var leftArrow = document.getElementById("left-arrow-present").checked;
+            var leftArrowWidth = parseInt(document.getElementById("left-arrow-width").value);
+            var leftArrowColor = document.getElementById("left-arrow-color").value;
+            var leftArrowText = document.getElementById("left-arrow-text").value;
+            var leftArrowTextColor = (leftArrowColor == "#FFC72C") ? "black" : "white";
+
+            var rightArrow = document.getElementById("right-arrow-present").checked;
+            var rightArrowWidth = parseInt(document.getElementById("right-arrow-width").value);
+            var rightArrowColor = document.getElementById("right-arrow-color").value;
+            var rightArrowText = document.getElementById("right-arrow-text").value;
+            var rightArrowTextColor = (rightArrowColor == "#FFC72C") ? "black" : "white";
+
+            var lineStroke = parseInt(document.getElementById("line-stroke").value);
+            var lineDashArray = document.getElementById("line-dash-array").value;
+            var stationRadius = parseInt(document.getElementById("station-radius").value);
+            var stationStroke = parseInt(document.getElementById("station-stroke").value);
+            var stationTextSize = parseInt(document.getElementById("station-text-size").value);
+            var RT2 = Math.sqrt(2);
+
+            // Create SVG
+            var diagram = SVG('drawing')
+                .size(width, 100)
+                .style({
+                    "background-color": "white",
+                    "outline": "1px solid black"
+                });
+
+            // Put everything inside container so it can be moved later to add padding
+            var container = diagram.group();
+
+            // ISA Symbol from Wikipedia
+            var isaSymbol = diagram.symbol();
+            isaSymbol.path("M161.9882813,98.1240234 c24.9628906-2.3046875,44.3574219-23.8110352,44.3574219-48.9658203C206.3457031,22.0830078,184.2626953,0,157.1875,0 s-49.1572266,22.0830078-49.1572266,49.1582031c0,8.2568359,2.3037109,16.7055664,6.1445313,23.8105469l17.515625,246.4667969 l180.3964844,0.0488281l73.9912109,173.3652344l97.1445313-38.0976563l-15.0429688-35.8203125l-54.3662109,19.625 l-71.5908203-165.2802734l-167.7294922,1.1269531l-2.3027344-31.2128906l121.4228516,0.0483398v-46.1831055l-126.0546875-0.0493164 L161.9882813,98.1240234z").fill("black");
+            isaSymbol.path("M343.4199219,451.5908203 c-30.4472656,60.1875-94.1748047,99.8398438-162.1503906,99.8398438C81.4296875,551.4306641,0,470.0009766,0,370.1611328 c0-70.1005859,42.4853516-135.2436523,105.8818359-164.1210938l4.1025391,53.5375977 c-37.4970703,23.628418-60.6123047,66.262207-60.6123047,110.9506836c0,72.4267578,59.0712891,131.4970703,131.4970703,131.4970703 c66.2617188,0,122.7646484-50.8515625,130.4697266-116.0869141L343.4199219,451.5908203z").fill("black");
+            isaSymbol.viewbox(0, 0, 483.2226563, 551.4306641);
+            isaSymbol.size(stationTextSize, stationTextSize);
+
+            ///////////////////////////////////////////////////////////////////
+            // Draw dashed line
+            ///////////////////////////////////////////////////////////////////
+            var lineGroup = container.group();            
+
+            var dashedLineStartX = stationRadius;
+            var dashedLineEndX = width - stationRadius;
+            if (leftArrow) { dashedLineStartX += leftArrowWidth };
+            if (rightArrow) { dashedLineEndX -= rightArrowWidth };
+
+            var line = lineGroup
+                .line(dashedLineStartX, 0, dashedLineEndX, 0)
+                .stroke({
+                    color: "black",
+                    width: lineStroke,
+                    dasharray: lineDashArray
+                });
+
+
+            ///////////////////////////////////////////////////////////////////
+            // Draw stations
+            ///////////////////////////////////////////////////////////////////
+            var stationGroup = container.group();
+            var textGroup = container.group();
+
+            var firstStationX = stationRadius;
+            var lastStationX = width - stationRadius;
+            if (leftArrow) { firstStationX += leftArrowWidth};
+            if (rightArrow) { lastStationX -= rightArrowWidth};
+
+            var stationDX = 0;
+            if (stations.length > 1) {
+                stationDX = (lastStationX - firstStationX) / (stations.length - 1);
+            }
+
+            for (var i = 0; i < stations.length; i++) {
+                var centerX = firstStationX + i * stationDX;
+                var centerY = 0;
+                var r = stationRadius - stationStroke / 2;
+
+                if (skippedStations.includes(stations[i])) {
+                    // Red Octagon for skipped stop
+                    var side = 2 * r / (1 + RT2);
+                    var points = [
+                        [(side / 2 * (1 + RT2)), (side / 2)],
+                        [(side / 2), (side / 2 * (1 + RT2))],
+                        [(-side / 2), (side / 2 * (1 + RT2))],
+                        [(-side / 2 * (1 + RT2)), (side / 2)],
+                        [(-side / 2 * (1 + RT2)), (-side / 2)],
+                        [(-side / 2), (-side / 2 * (1 + RT2))],
+                        [(side / 2), (-side / 2 * (1 + RT2))],
+                        [(side / 2 * (1 + RT2)), (-side / 2)],
+                    ];
+
+                    stationGroup.polygon(points.join(" "))
+                                .move(centerX - r, centerY - r)
+                                .fill("red")
+                                .stroke({color: "red", width: stationStroke});
+
+                    stationGroup.line(-r/2, -r/2, r/2, r/2)
+                                .move(centerX - r/2, centerY - r/2)
+                                .stroke({ color: "white", width: stationRadius / 3});
+
+                    stationGroup.line(-r/2, r/2, r/2, -r/2)
+                                .move(centerX - r/2, centerY - r/2)
+                                .stroke({ color: "white", width: stationRadius / 3});
+                } else {
+                    // Circle for normal stop
+                    stationGroup.circle(2*r)
+                                .move(centerX - r, centerY - r)
+                                .fill("white")
+                                .stroke({ color: "black", width: stationStroke});
+                }
+
+                // Station label
+                var stationTextAngle = 315;
+                var text = textGroup
+                    .text(function(add) {
+                        add.tspan(stations[i]).newLine();
+                    })
+                    .rotate(stationTextAngle, centerX - stationTextSize / 2, 0)
+                    .move(centerX - stationTextSize / 2, 0)
+                    .font({family: "sans-serif", weight: "bold", size: stationTextSize + "px"});
+
+                // Station accessibility label
+                if (accessibileStations.includes(stations[i])) {
+                    var ISAX = centerX - stationTextSize / 2
+                        + (text.length() + stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
+                    var ISAY = (text.length() + stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
+                    textGroup.use(isaSymbol).rotate(stationTextAngle, ISAX, ISAY).move(ISAX, ISAY);
+                }
+            }
+
+            // Used measured element heights to set Y coordinates of groups
+            var measuredTextHeight = textGroup.bbox().h;
+            var measuredLineHeight = stationGroup.bbox().h;
+            var lineY = measuredTextHeight + measuredLineHeight / 2 + lineExtraSpace;
+
+            lineGroup.move(0, lineY);
+            stationGroup.move(0, lineY);
+            textGroup.move(0, measuredTextHeight - stationTextSize);
+            diagram.size(width, measuredTextHeight + measuredLineHeight);
+
+            ///////////////////////////////////////////////////////////////////
+            // Draw left arrow
+            ///////////////////////////////////////////////////////////////////
+            if (leftArrow) {
+                var leftArrowGroup = container.group();
+
+                // Arrow
+                var dy = stationRadius - stationStroke / 2;
+                var points = [
+                    [stationStroke / RT2, lineY],
+                    [stationRadius, lineY + dy],
+                    [leftArrowWidth + stationRadius, lineY + dy],
+                    [leftArrowWidth + stationRadius, lineY - dy],
+                    [stationRadius, (lineY - dy)]
+                ];
+
+
+                leftArrowGroup.polygon(points.join(" "))
+                              .fill(leftArrowColor)
+                              .stroke({color: leftArrowColor, width: stationStroke});
+
+                // Circle
+                var centerX = firstStationX;
+                var centerY = lineY;
+                var r = stationRadius - stationStroke / 2;  
+                leftArrowGroup.circle(2 * r)
+                              .move(centerX - r, centerY - r)
+                              .fill("white")
+                              .stroke({ color: leftArrowColor, width: stationStroke});
+
+                // Text label
+                var leftArrowTextLines = leftArrowText.split("//");
+                var leftArrowTextElt = leftArrowGroup
+                    .text(function(add) {
+                        for (var i = 0; i < leftArrowTextLines.length; i++) {
+                            add.tspan(leftArrowTextLines[i]).newLine();
+                        }
+                    })
+                    .stroke("none")
+                    .fill(leftArrowTextColor)
+                    .font({
+                        weight: "bold",
+                        size: arrowTextSize + "px",
+                        family: "sans-serif",
+                        anchor: "middle"
+                    });
+
+                // Adjust position based on measured height and width
+                var leftArrowTextX = stationRadius + leftArrowTextElt.bbox().w / 2;
+                var leftArrowTextY = lineY - leftArrowTextElt.bbox().h / 2;
+                leftArrowTextElt.move(leftArrowTextX, leftArrowTextY);
+            }
+
+            ///////////////////////////////////////////////////////////////////
+            // Draw right arrow
+            ///////////////////////////////////////////////////////////////////
+            if (rightArrow) {
+                var rightArrowGroup = container.group();
+
+                // Arrow
+                var dy = stationRadius - stationStroke / 2;
+                var points = [
+                    [width - stationStroke / RT2, lineY],
+                    [width - stationRadius, lineY + dy],
+                    [width - rightArrowWidth - stationRadius, lineY + dy],
+                    [width - rightArrowWidth - stationRadius, lineY - dy],
+                    [width - stationRadius, lineY - dy],
+                ];
+
+                rightArrowGroup.polygon(points.join(" "))
+                               .fill(rightArrowColor)
+                               .stroke({color: rightArrowColor, width: stationStroke});
+
+                // Circle
+                var centerX = lastStationX;
+                var centerY = lineY;
+                var r = stationRadius - stationStroke / 2;
+                rightArrowGroup.circle(2 * r)
+                               .move(centerX - r, centerY - r)
+                               .fill("white")
+                               .stroke({ color: rightArrowColor, width: stationStroke});
+
+                // Text label
+                var rightArrowTextLines = rightArrowText.split("//");
+                var rightArrowTextElt = rightArrowGroup
+                    .text(function(add) {
+                        for (var i = 0; i < rightArrowTextLines.length; i++) {
+                            add.tspan(rightArrowTextLines[i]).newLine();
+                        }
+                    })
+                    .stroke("none")
+                    .fill(rightArrowTextColor)
+                    .font({
+                        weight: "bold",
+                        size: arrowTextSize + "px",
+                        family: "sans-serif",
+                        anchor: "middle"
+                    })
+
+                // Adjust position based on measured height and width
+                var rightArrowTextX = width - stationRadius - rightArrowTextElt.bbox().w / 2;
+                var rightArrowTextY = lineY - rightArrowTextElt.bbox().h / 2;
+                rightArrowTextElt.move(rightArrowTextX, rightArrowTextY);
+            }
+
+            // Add padding, including extra padding on RHS if necessary
+            var lastTextEndX = textGroup.bbox().x2;
+            var measuredWidth = Math.max(width, lastTextEndX);
+            var measuredHeight = measuredTextHeight + measuredLineHeight + lineExtraSpace;
+            diagram.size(measuredWidth + 2 * padding, measuredHeight + 2 * padding);
+            container.move(padding, padding);
+        }
+    </script>
+</body>
+</html>
