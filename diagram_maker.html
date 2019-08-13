@@ -7,20 +7,12 @@
 <body>
     <div id="inputs" style="float: left; width: 30%;" onchange="draw()">
         <div>
-            <label>Line Width</label>
+            <label>Width</label>
             <input type="number" id="width" value="1000" />
         </div>
         <div>
-            <label>Line Stroke</label>
-            <input type="number" id="line-stroke" value="20" />
-        </div>
-        <div>
-            <label>Line Dash Array</label>
-            <input type="text" id="line-dash-array" value="30, 10" />
-        </div>
-        <div>
-            <label>Line Extra Space</label>
-            <input type="number" id="line-extra-space" value="6" />
+            <label>Padding</label>
+            <input type="number" id="padding" value="20" />
         </div>
         <div>
             <label>Stations (one per line)</label><br />
@@ -28,20 +20,21 @@
         </div>
         <div>
             <label>Accessible Stations (one per line)</label><br />
-            <textarea id="accessible-stations" cols="20" rows="6"></textarea>
+            <textarea id="accessible-stations" cols="20" rows="8"></textarea>
         </div>
         <div>
-            <label>Station Radius</label>
-            <input type="number" id="station-radius" value="24" />
-        </div>
-        <div>
-            <label>Station Stroke</label>
-            <input type="number" id="station-stroke" value="6" />
+            <label>Skipped Stations (one per line)</label><br />
+            <textarea id="skipped-stations" cols="20" rows="4"></textarea>
         </div>
         <div>
             <label>Station Text Size</label>
             <input type="number" id="station-text-size" value="24" />
         </div>
+        <div>
+            <label>Arrow Text Size</label>
+            <input type="number" id="arrow-text-size" value="16" />
+        </div>
+        <br />
         <div>
             <label>Left arrow?</label>
             <input type="checkbox" id="left-arrow-present" checked />
@@ -66,6 +59,7 @@
                 <option value="#FFC72C">Bus</option>
             </select>
         </div>
+        <br />
         <div>
             <label>Right arrow?</label>
             <input type="checkbox" id="right-arrow-present" checked />
@@ -90,18 +84,6 @@
                 <option value="#FFC72C">Bus</option>
             </select>
         </div>
-        <div>
-            <label>Arrow Text Size</label>
-            <input type="number" id="arrow-text-size" value="16" />
-        </div>
-        <div>
-            <label>Skipped Stations (one per line)</label><br />
-            <textarea id="skipped-stations" cols="20" rows="6"></textarea>
-        </div>
-        <div>
-            <label>Padding</label>
-            <input type="number" id="padding" value="20" />
-        </div>
         <br />
         <div>
             <label>Download width</label>
@@ -109,6 +91,29 @@
         </div>
         <div>
             <input type="submit" id="save" value="Save Diagram" onclick="save()" />
+        </div>
+
+        <br /><br />
+        More options:
+        <div>
+            <label>Line Stroke</label>
+            <input type="number" id="line-stroke" value="20" />
+        </div>
+        <div>
+            <label>Line Dash Array</label>
+            <input type="text" id="line-dash-array" value="30, 10" />
+        </div>
+        <div>
+            <label>Line Extra Space</label>
+            <input type="number" id="line-extra-space" value="6" />
+        </div>
+        <div>
+            <label>Station Radius</label>
+            <input type="number" id="station-radius" value="24" />
+        </div>
+        <div>
+            <label>Station Stroke</label>
+            <input type="number" id="station-stroke" value="6" />
         </div>
     </div>
 
