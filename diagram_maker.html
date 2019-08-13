@@ -182,9 +182,9 @@
             var width = parseInt(document.getElementById("width").value);
             var lineExtraSpace = parseInt(document.getElementById("line-extra-space").value);
 
-            var stations = document.getElementById("stations").value.split("\n");
-            var accessibileStations = document.getElementById("accessible-stations").value.split("\n");
-            var skippedStations = document.getElementById("skipped-stations").value.split("\n");
+            var stations = document.getElementById("stations").value.trim().split("\n");
+            var accessibleStations = document.getElementById("accessible-stations").value.trim().split("\n");
+            var skippedStations = document.getElementById("skipped-stations").value.trim().split("\n");
 
             var arrowTextSize = parseInt(document.getElementById("arrow-text-size").value);
             var leftArrow = document.getElementById("left-arrow-present").checked;
@@ -309,7 +309,7 @@
                     .font({family: "sans-serif", weight: "bold", size: stationTextSize + "px"});
 
                 // Station accessibility label
-                if (accessibileStations.includes(stations[i])) {
+                if (accessibleStations.includes(stations[i])) {
                     var ISAX = centerX - stationTextSize / 2
                         + (text.length() + stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
                     var ISAY = (text.length() + stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
