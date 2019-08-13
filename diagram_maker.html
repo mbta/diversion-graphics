@@ -120,11 +120,25 @@
     <div id="drawing" style="float: left; width: 70%;"></div>
     <canvas id="canvas" style="opacity: 0;"></canvas>
 
+    <div style="position: absolute; right: 4px; bottom: 4px; text-align: right;">
+        <div><a id="feedback-link">Feedback</a></div>
+        <div id="version-number">version 20190813</div>
+        <div><a href="https://raw.githubusercontent.com/mbta/diversion-graphics/master/diagram_maker.html">Get the latest version</a></div>
+    </div>
+
     <script type="text/javascript">
+        var VERSION = "20190813";
+
         document.addEventListener("DOMContentLoaded", function() {
+            // Set the version number
+            document.getElementById("feedback-link").href = "mailto:webcontent@mbta.com?subject=Feedback for diversion diagram maker (version " + VERSION + ")";
+            document.getElementById("version-number").innerHTML = "version " + VERSION;
+
+            // Default values (Newton Highlands / Kenmore)
             document.getElementById("stations").value = "NEWTON HIGHLANDS\nNEWTON CENTRE\nCHESTNUT HILL\nRESERVOIR\nBEACONSFIELD\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
             document.getElementById("accessible-stations").value = "NEWTON CENTRE\nRESERVOIR\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
             document.getElementById("skipped-stations").value = "BEACONSFIELD";
+
             draw();
         });
 
