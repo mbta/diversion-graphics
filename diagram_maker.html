@@ -5,129 +5,384 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
 </head>
 <body>
-    <div id="inputs" style="float: left; width: 30%;" onchange="draw()">
+    <div style="float: left; width: 30%;" >
         <div>
-            <label>Width</label>
-            <input type="number" id="width" value="1000" />
-        </div>
-        <div>
-            <label>Padding</label>
-            <input type="number" id="padding" value="20" />
-        </div>
-        <div>
-            <label>Stations (one per line)</label><br />
-            <textarea id="stations" cols="20" rows="12"></textarea>
-        </div>
-        <div>
-            <label>Accessible Stations (one per line)</label><br />
-            <textarea id="accessible-stations" cols="20" rows="8"></textarea>
-        </div>
-        <div>
-            <label>Skipped Stations (one per line)</label><br />
-            <textarea id="skipped-stations" cols="20" rows="4"></textarea>
-        </div>
-        <div>
-            <label>Station Text Size</label>
-            <input type="number" id="station-text-size" value="24" />
-        </div>
-        <div>
-            <label>Arrow Text Size</label>
-            <input type="number" id="arrow-text-size" value="16" />
-        </div>
-        <br />
-        <div>
-            <label>Left arrow?</label>
-            <input type="checkbox" id="left-arrow-present" checked />
-        </div>
-        <div>
-            <label>Left arrow width</label>
-            <input type="number" id="left-arrow-width" value="120" />
-        </div>
-        <div>
-            <label>Left arrow text</label>
-            <input type="text" id="left-arrow-text" value="RIVERSIDE" />
-        </div>
-        <div>
-            <label>Left arrow color</label>
-            <select id="left-arrow-color">
-                <option value="#00843D">Green Line</option>
-                <option value="#ED8B00">Orange Line</option>
-                <option value="#DA291C">Red Line</option>
-                <option value="#003DA5">Blue Line</option>
-                <option value="#80276C">Commuter Rail</option>
-                <option value="#7C878E">Silver Line</option>
-                <option value="#FFC72C">Bus</option>
+            <select id="route-pattern" onchange="selectRoutePattern()">
+                <option disabled selected value> -- route pattern -- </option>
             </select>
         </div>
-        <br />
         <div>
-            <label>Right arrow?</label>
-            <input type="checkbox" id="right-arrow-present" checked />
-        </div>
-        <div>
-            <label>Right arrow width</label>
-            <input type="number" id="right-arrow-width" value="120" />
-        </div>
-        <div>
-            <label>Right arrow text</label>
-            <input type="text" id="right-arrow-text" value="PARK ST//& NORTH" />
-        </div>
-        <div>
-            <label>Right arrow color</label>
-            <select id="right-arrow-color">
-                <option value="#00843D">Green Line</option>
-                <option value="#ED8B00">Orange Line</option>
-                <option value="#DA291C">Red Line</option>
-                <option value="#003DA5">Blue Line</option>
-                <option value="#80276C">Commuter Rail</option>
-                <option value="#7C878E">Silver Line</option>
-                <option value="#FFC72C">Bus</option>
+            <select id="route-direction" onchange="selectDirection()">
+                <option disabled selected value> -- direction -- </option>
             </select>
         </div>
-        <br />
         <div>
-            <label>Download width</label>
-            <input type="number" id="download-width" value="2600" />
+            <select id="from-stop" onchange="selectFromStop()">
+                <option disabled selected value> -- from stop -- </option>
+            </select>
+        </div>
+        <div> 
+            <select id="to-stop">
+                <option disabled selected value> -- to stop -- </option>
+            </select>
         </div>
         <div>
-            <input type="submit" id="save" value="Save Diagram" onclick="save()" />
+            <input type="submit" id="save" value="Fill Stations" onclick="updateStations()" />
         </div>
 
         <br /><br />
-        More options:
-        <div>
-            <label>Line Stroke</label>
-            <input type="number" id="line-stroke" value="20" />
-        </div>
-        <div>
-            <label>Line Dash Array</label>
-            <input type="text" id="line-dash-array" value="30, 10" />
-        </div>
-        <div>
-            <label>Line Extra Space</label>
-            <input type="number" id="line-extra-space" value="6" />
-        </div>
-        <div>
-            <label>Station Radius</label>
-            <input type="number" id="station-radius" value="24" />
-        </div>
-        <div>
-            <label>Station Stroke</label>
-            <input type="number" id="station-stroke" value="6" />
+
+        <div onchange="draw()">
+            <div>
+                <label>Width</label>
+                <input type="number" id="width" value="1000" />
+            </div>
+            <div>
+                <label>Padding</label>
+                <input type="number" id="padding" value="20" />
+            </div>
+            <div>
+                <label>Stations (one per line)</label><br />
+                <textarea id="stations" cols="20" rows="12"></textarea>
+            </div>
+            <div>
+                <label>Accessible Stations (one per line)</label><br />
+                <textarea id="accessible-stations" cols="20" rows="8"></textarea>
+            </div>
+            <div>
+                <label>Skipped Stations (one per line)</label><br />
+                <textarea id="skipped-stations" cols="20" rows="4"></textarea>
+            </div>
+            <div>
+                <label>Station Text Size</label>
+                <input type="number" id="station-text-size" value="24" />
+            </div>
+            <div>
+                <label>Arrow Text Size</label>
+                <input type="number" id="arrow-text-size" value="16" />
+            </div>
+            <br />
+            <div>
+                <label>Left arrow?</label>
+                <input type="checkbox" id="left-arrow-present" checked />
+            </div>
+            <div>
+                <label>Left arrow width</label>
+                <input type="number" id="left-arrow-width" value="120" />
+            </div>
+            <div>
+                <label>Left arrow text</label>
+                <input type="text" id="left-arrow-text" value="RIVERSIDE" />
+            </div>
+            <div>
+                <label>Left arrow color</label>
+                <select id="left-arrow-color">
+                    <option value="#00843D">Green Line</option>
+                    <option value="#ED8B00">Orange Line</option>
+                    <option value="#DA291C">Red Line</option>
+                    <option value="#003DA5">Blue Line</option>
+                    <option value="#80276C">Commuter Rail</option>
+                    <option value="#7C878E">Silver Line</option>
+                    <option value="#FFC72C">Bus</option>
+                </select>
+            </div>
+            <br />
+            <div>
+                <label>Right arrow?</label>
+                <input type="checkbox" id="right-arrow-present" checked />
+            </div>
+            <div>
+                <label>Right arrow width</label>
+                <input type="number" id="right-arrow-width" value="120" />
+            </div>
+            <div>
+                <label>Right arrow text</label>
+                <input type="text" id="right-arrow-text" value="PARK ST//& NORTH" />
+            </div>
+            <div>
+                <label>Right arrow color</label>
+                <select id="right-arrow-color">
+                    <option value="#00843D">Green Line</option>
+                    <option value="#ED8B00">Orange Line</option>
+                    <option value="#DA291C">Red Line</option>
+                    <option value="#003DA5">Blue Line</option>
+                    <option value="#80276C">Commuter Rail</option>
+                    <option value="#7C878E">Silver Line</option>
+                    <option value="#FFC72C">Bus</option>
+                </select>
+            </div>
+            <br />
+            <div>
+                <label>Download width</label>
+                <input type="number" id="download-width" value="2600" />
+            </div>
+            <div>
+                <input type="submit" id="save" value="Save Diagram" onclick="save()" />
+            </div>
+
+            <br /><br />
+            More options:
+            <div>
+                <label>Line Stroke</label>
+                <input type="number" id="line-stroke" value="20" />
+            </div>
+            <div>
+                <label>Line Dash Array</label>
+                <input type="text" id="line-dash-array" value="30, 10" />
+            </div>
+            <div>
+                <label>Line Extra Space</label>
+                <input type="number" id="line-extra-space" value="6" />
+            </div>
+            <div>
+                <label>Station Radius</label>
+                <input type="number" id="station-radius" value="24" />
+            </div>
+            <div>
+                <label>Station Stroke</label>
+                <input type="number" id="station-stroke" value="6" />
+            </div>
         </div>
     </div>
 
-    <div id="drawing" style="float: left; width: 70%;"></div>
+    <div id="drawing" style="position: fixed; top: 8px; left: 30%; "></div>
     <canvas id="canvas" style="opacity: 0;"></canvas>
 
-    <div style="position: absolute; right: 4px; bottom: 4px; text-align: right;">
+    <div style="position: fixed; right: 4px; bottom: 4px; text-align: right;">
         <div><a id="feedback-link">Feedback</a></div>
         <div id="version-number">version 20190813</div>
         <div><a href="https://raw.githubusercontent.com/mbta/diversion-graphics/master/diagram_maker.html">Get the latest version</a></div>
     </div>
 
     <script type="text/javascript">
-        var VERSION = "20190813";
+        var VERSION = "20190815";
+
+        var ROUTE_PATTERNS = {
+            redAshmont: {
+                name: "Red Line (Ashmont)",
+                color: "#DA291C",
+                stops: [
+                    {name: "Ashmont", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Shawmut", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Fields Corner", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Savin Hill", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            redBraintree: {
+                name: "Red Line (Braintree)",
+                color: "#DA291C",
+                stops: [
+                    {name: "Braintree", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "Quincy Adams", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "Quincy Center", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    // {name: "Wollaston", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "North Quincy", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            mattapan: {
+                name: "Mattapan Line",
+                color: "#DA291C",
+                stops: [
+                    {name: "Mattapan", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Capen Street", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Valley Road", accessible: false, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Central Avenue", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Milton", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Butler", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Cedar Grove", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Ashmont", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]}
+                ],
+                directions: ["Inbound", "Outbound"]
+            },
+            orange: {
+                name: "Orange Line",
+                color: "#ED8B00",
+                stops: [
+                    {name: "Forest Hills", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Green Street", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Stony Brook", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Jackson Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Roxbury Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Ruggles", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Massachusetts Avenue", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Back Bay", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Tufts Medical Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Chinatown", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "State", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Haymarket", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "North Station", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Community College", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Sullivan Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Assembly", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Wellington", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Malden Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Oak Grove", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            blue: {
+                name: "Blue Line",
+                color: "#003DA5",
+                stops: [
+                    {name: "Bowdoin", accessible: false, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Government Center", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "State", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Aquarium", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Maverick", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Airport", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Wood Island", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Orient Heights", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Suffolk Downs", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Beachmont", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Revere Beach", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Wonderland", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenB: {
+                name: "Green Line (B Branch)",
+                color: "#00843D",
+                stops: [
+                    {name: "Boston College", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "South Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Chestnut Hill Avenue", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Chiswick Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Sutherland Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Washington Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Warren Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Allston Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Griggs Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Harvard Avenue", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Packards Corner", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Babcock Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Pleasant Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University West", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University Central", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University East", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Blandford Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Park Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenC: {
+                name: "Green Line (C Branch)",
+                color: "#00843D",
+                stops: [
+                    {name: "Cleveland Circle", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Englewood Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Dean Road", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Tappan Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Washington Square", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Fairbanks Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Brandon Hall", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Summit Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Coolidge Corner", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Kent Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Hawes Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Saint Marys Street", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "North Station", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenD: {
+                name: "Green Line (D Branch)",
+                color: "#00843D",
+                stops: [
+                    {name: "Riverside", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Woodland", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Waban", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Eliot", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Newton Highlands", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Newton Centre", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Chestnut Hill", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Reservoir", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Beaconsfield", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Brookline Hills", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Brookline Village", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Longwood", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Fenway", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenE: {
+                name: "Green Line (E Branch)",
+                color: "#00843D",
+                stops: [
+                    {name: "Heath Street", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Back of the Hill", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Riverway", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Mission Park", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Fenwood Road", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Brigham Circle", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Longwood Medical Area", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Museum of Fine Arts", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Northeastern University", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Symphony", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Prudential", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "North Station", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
+                    {name: "Science Park", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
+                    {name: "Lechmere", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
             // Set the version number
@@ -139,8 +394,170 @@
             document.getElementById("accessible-stations").value = "NEWTON CENTRE\nRESERVOIR\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
             document.getElementById("skipped-stations").value = "BEACONSFIELD";
 
+            // Set route pattern select values
+            updateRoutePatterns();
+
             draw();
         });
+
+        function updateRoutePatterns() {
+            var select = document.getElementById("route-pattern");
+
+            for (var routePatternId in ROUTE_PATTERNS) {
+                var routePattern = ROUTE_PATTERNS[routePatternId];
+                var elt = document.createElement("option");
+                elt.value = routePatternId;
+                elt.innerHTML = routePattern.name;
+                select.appendChild(elt);
+            }
+        }
+
+        function selectRoutePattern() {
+            var routePatternId = document.getElementById("route-pattern").value;
+            var routePattern = ROUTE_PATTERNS[routePatternId];
+            var directions = routePattern.directions;
+
+            var select = document.getElementById("route-direction");
+            select.innerHTML = "";
+            for (var i = 0; i < directions.length; i++) {
+                var elt = document.createElement("option");
+                elt.value = directions[i];
+                elt.innerHTML = directions[i];
+                select.appendChild(elt);
+            }
+
+            selectDirection();
+        }
+
+        function selectDirection() {
+            var routePatternId = document.getElementById("route-pattern").value;
+            var direction = document.getElementById("route-direction").value;
+            var routePattern = ROUTE_PATTERNS[routePatternId];
+
+            var directions = routePattern.directions;
+            var stops = routePattern.stops.slice(0);
+
+            if (direction == directions[1]) {
+                stops.reverse();
+            }
+
+            var select = document.getElementById("from-stop");
+            select.innerHTML = "";
+            for (var i = 0; i < stops.length; i++) {
+                var stop = stops[i];
+                var elt = document.createElement("option");
+                elt.value = stop.name.toUpperCase();
+                elt.innerHTML = stop.name.toUpperCase();
+                select.appendChild(elt);
+            }
+
+            selectFromStop();
+        }
+
+        function selectFromStop() {
+            var routePatternId = document.getElementById("route-pattern").value;
+            var direction = document.getElementById("route-direction").value;
+            var fromStop = document.getElementById("from-stop").value;
+            var routePattern = ROUTE_PATTERNS[routePatternId];
+            var directions = routePattern.directions;
+            var stops = routePattern.stops.slice(0);
+
+            if (direction == directions[1]) {
+                stops.reverse();
+            }
+
+            var foundStop = false;
+            var select = document.getElementById("to-stop");
+            select.innerHTML = "";
+            for (var i = 0; i < stops.length; i++) {
+                var stop = stops[i];
+
+                if (foundStop) {
+                    var elt = document.createElement("option");
+                    elt.value = stop.name.toUpperCase();
+                    elt.innerHTML = stop.name.toUpperCase();
+                    select.appendChild(elt);
+                }
+
+                if (stop.name.toUpperCase() === fromStop) {
+                    foundStop = true;
+                }
+            }
+        }
+
+        function updateStations() {
+            var routePatternId = document.getElementById("route-pattern").value;
+            var direction = document.getElementById("route-direction").value;
+            var fromStop = document.getElementById("from-stop").value;
+            var toStop = document.getElementById("to-stop").value;
+            var routePattern = ROUTE_PATTERNS[routePatternId];
+            var directions = routePattern.directions;
+            var stops = routePattern.stops.slice(0);
+
+            if (direction == directions[1]) {
+                stops.reverse();
+            }
+
+            var foundFromStop = false;
+            var foundToStop = false;
+            var includesFirstStop = false;
+            var includesLastStop = false;
+            var leftArrowText = null;
+            var rightArrowText = null;
+
+            var stations = [];
+            var accessibleStations = [];
+            for (var i = 0; i < stops.length; i++) {
+                var stop = stops[i];
+
+                if (stop.name.toUpperCase() === fromStop) {
+                    foundFromStop = true;
+                    leftArrowText = (direction == directions[0]) ? stop.destinations[1] : stop.destinations[0];
+                }
+
+                if (foundFromStop && !foundToStop) {
+                    stations.push(stop.name.toUpperCase());
+                    if (stop.accessible === true) {
+                        accessibleStations.push(stop.name.toUpperCase());
+                    }
+
+                    if (i == 0) {
+                        includesFirstStop = true;
+                    }
+
+                    if (i == stops.length - 1) {
+                        includesLastStop = true;
+                    }
+                }
+
+                if (stop.name.toUpperCase() === toStop) {
+                    foundToStop = true;
+                    rightArrowText = (direction == directions[0]) ? stop.destinations[0] : stop.destinations[1];
+                }
+            }
+
+            document.getElementById("stations").value = stations.join("\n");
+            document.getElementById("accessible-stations").value = accessibleStations.join("\n");
+            document.getElementById("skipped-stations").value = "";
+            document.getElementById("left-arrow-color").value = routePattern.color;
+            document.getElementById("right-arrow-color").value = routePattern.color;
+
+            if (includesFirstStop) {
+                document.getElementById("left-arrow-present").checked = false;
+            } else {
+                document.getElementById("left-arrow-present").checked = true;
+                document.getElementById("left-arrow-text").value = leftArrowText;
+            }
+
+            if (includesLastStop) {
+                document.getElementById("right-arrow-present").checked = false;
+            } else {
+                document.getElementById("right-arrow-present").checked = true;
+                document.getElementById("right-arrow-text").value = rightArrowText;
+            }
+
+            draw();
+        }
 
         // Adapted from https://stackoverflow.com/questions/28226677/save-inline-svg-as-jpeg-png-svg
         function save() {
