@@ -537,7 +537,13 @@
             }
 
             document.getElementById("stations").value = stations.join("\n");
-            document.getElementById("accessible-stations").value = accessibleStations.join("\n");
+            
+            // Don't set accessible stations for now
+            // We're not confident about the accessibility of shuttle stops
+            // document.getElementById("accessible-stations").value = accessibleStations.join("\n");
+            document.getElementById("accessible-stations").value = "";
+
+
             document.getElementById("skipped-stations").value = "";
             document.getElementById("left-arrow-color").value = routePattern.color;
             document.getElementById("right-arrow-color").value = routePattern.color;
