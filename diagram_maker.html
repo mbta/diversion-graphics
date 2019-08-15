@@ -556,7 +556,8 @@
                 document.getElementById("right-arrow-text").value = rightArrowText;
             }
 
-            draw();
+            // Draw and automatically set widths
+            draw(true);
         }
 
         // Adapted from https://stackoverflow.com/questions/28226677/save-inline-svg-as-jpeg-png-svg
@@ -609,7 +610,7 @@
             img.src = url;
         }
 
-        function draw() {
+        function draw(setWidths) {
             // Clear existing diagram
             document.getElementById("drawing").innerHTML = "";
 
@@ -874,6 +875,18 @@
             var measuredHeight = measuredTextHeight + measuredLineHeight + lineExtraSpace;
             diagram.size(measuredWidth + 2 * padding, measuredHeight + 2 * padding);
             container.move(padding, padding);
+
+            if (setWidths) {
+                // Compute new widths
+                leftArrowWidth = Math.round(leftArrowTextElt.bbox().w + stationRadius * 2);
+                rightArrowWidth = Math.round(rightArrowTextElt.bbox().w + stationRadius * 2);
+
+                document.getElementById("left-arrow-width").value = leftArrowWidth;
+                document.getElementById("right-arrow-width").value = rightArrowWidth;
+
+                // Redraw with new widths
+                draw();
+            }
         }
     </script>
 </body>
