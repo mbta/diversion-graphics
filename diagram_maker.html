@@ -825,6 +825,10 @@
                     for (var j = 0; j < linesSpec.length; j++) {
                         if (i > linesSpec[j].startIndex && i <= linesSpec[j].endIndex) {
                             var stopStrokeColor = linesSpec[j].color;
+
+                            if ((stopStrokeColor == "black") && (j < linesSpec.length - 1) && (i == linesSpec[j].endIndex)) {
+                                stopStrokeColor = linesSpec[j + 1].color;
+                            }
                         }
                     }
 
