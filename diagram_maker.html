@@ -123,6 +123,11 @@
             <br /><br />
             More options:
             <div>
+                <label>Lines</label>
+                <br />
+                <textarea id="lines" cols="20" rows="4"></textarea>
+            </div>
+            <div>
                 <label>Line Stroke</label>
                 <input type="number" id="line-stroke" value="20" />
             </div>
@@ -397,7 +402,8 @@
             // Set route pattern select values
             updateRoutePatterns();
 
-            draw();
+            // Draw and automatically set arrow widths
+            draw(true);
         });
 
         function updateRoutePatterns() {
@@ -616,6 +622,19 @@
             img.src = url;
         }
 
+        function parseColor(color) {
+            if (color == "green") { return "#00843D"; }
+            if (color == "orange") { return "#ED8B00"; }
+            if (color == "red") { return "#DA291C"; }
+            if (color == "blue") { return "#003DA5"; }
+            if (color == "purple" || color == "CR") { return "#80276C"; }
+            if (color == "silver") { return "#7C878E"; }
+            if (color == "bus") { return "#FFC72C"; }
+
+            return "black";
+        }
+
+
         function draw(setWidths) {
             // Clear existing diagram
             document.getElementById("drawing").innerHTML = "";
@@ -649,6 +668,34 @@
             var stationTextSize = parseInt(document.getElementById("station-text-size").value);
             var RT2 = Math.sqrt(2);
 
+            var linesSpec;
+            var linesText = document.getElementById("lines").value.trim();
+            if (linesText) {
+                linesSpec = [];
+                var linesArr = linesText.trim().split("\n");
+                for (var i = 0; i < linesArr.length; i++) {
+                    var data = linesArr[i].split(",");
+                    var parsedLine = {};
+                    parsedLine.startIndex = parseInt(data[0]);
+                    parsedLine.endIndex = parseInt(data[1]);
+
+                    if (["red", "orange", "green", "blue", "purple", "CR", "silver", "bus"].includes(data[2])) {
+                        parsedLine.color = parseColor(data[2].trim());
+                        parsedLine.width = stationRadius * 2;
+                    } else if (data[2] == "shuttle") {
+                        parsedLine.color = "black";
+                        parsedLine.width = lineStroke;
+                        parsedLine.dasharray = lineDashArray;
+                    }
+
+                    linesSpec.push(parsedLine);
+                }
+            } else {
+                // Default value
+                linesSpec = [
+                {startIndex: 0, endIndex: stations.length, color: "black", width: lineStroke, dasharray: lineDashArray}];
+            }
+
             // Create SVG
             var diagram = SVG('drawing')
                 .size(width, 100)
@@ -660,6 +707,13 @@
             // Put everything inside container so it can be moved later to add padding
             var container = diagram.group();
 
+            // Create groups in the right order
+            var textGroup = container.group();
+            var lineGroup = container.group();
+            var stationGroup = container.group();
+            if (leftArrow) { var leftArrowGroup = container.group(); }
+            if (rightArrow) { var rightArrowGroup = container.group(); }
+
             // ISA Symbol from Wikipedia
             var isaSymbol = diagram.symbol();
             isaSymbol.path("M161.9882813,98.1240234 c24.9628906-2.3046875,44.3574219-23.8110352,44.3574219-48.9658203C206.3457031,22.0830078,184.2626953,0,157.1875,0 s-49.1572266,22.0830078-49.1572266,49.1582031c0,8.2568359,2.3037109,16.7055664,6.1445313,23.8105469l17.515625,246.4667969 l180.3964844,0.0488281l73.9912109,173.3652344l97.1445313-38.0976563l-15.0429688-35.8203125l-54.3662109,19.625 l-71.5908203-165.2802734l-167.7294922,1.1269531l-2.3027344-31.2128906l121.4228516,0.0483398v-46.1831055l-126.0546875-0.0493164 L161.9882813,98.1240234z").fill("black");
@@ -667,43 +721,87 @@
             isaSymbol.viewbox(0, 0, 483.2226563, 551.4306641);
             isaSymbol.size(stationTextSize, stationTextSize);
 
+
+            if (leftArrow) {
+                // Text label
+                var leftArrowTextLines = leftArrowText.split("//");
+                var leftArrowTextElt = leftArrowGroup
+                    .text(function(add) {
+                        for (var i = 0; i < leftArrowTextLines.length; i++) {
+                            add.tspan(leftArrowTextLines[i]).newLine();
+                        }
+                    })
+                    .stroke("none")
+                    .fill(leftArrowTextColor)
+                    .font({
+                        weight: "bold",
+                        size: arrowTextSize + "px",
+                        family: "sans-serif",
+                        anchor: "middle"
+                    });
+            }
+
+            if (rightArrow) {
+                // Text label
+                var rightArrowTextLines = rightArrowText.split("//");
+                var rightArrowTextElt = diagram
+                    .text(function(add) {
+                        for (var i = 0; i < rightArrowTextLines.length; i++) {
+                            add.tspan(rightArrowTextLines[i]).newLine();
+                        }
+                    })
+                    .stroke("none")
+                    .fill(rightArrowTextColor)
+                    .font({
+                        weight: "bold",
+                        size: arrowTextSize + "px",
+                        family: "sans-serif",
+                        anchor: "middle"
+                    })
+            }
+
+            if (setWidths) {
+                // Compute new widths
+                if (leftArrow) {
+                    leftArrowWidth = Math.round(leftArrowTextElt.bbox().w + stationRadius * 2);
+                    document.getElementById("left-arrow-width").value = leftArrowWidth;
+                }
+
+                if (rightArrow) {
+                    rightArrowWidth = Math.round(rightArrowTextElt.bbox().w + stationRadius * 2);
+                    document.getElementById("right-arrow-width").value = rightArrowWidth;
+                }
+            }
+
             ///////////////////////////////////////////////////////////////////
-            // Draw dashed line
+            // Compute startX, endX, stationDX
             ///////////////////////////////////////////////////////////////////
-            var lineGroup = container.group();            
+            var startX = stationRadius;
+            var endX = width - stationRadius;
+            if (leftArrow) { startX += leftArrowWidth };
+            if (rightArrow) { endX -= rightArrowWidth };
 
-            var dashedLineStartX = stationRadius;
-            var dashedLineEndX = width - stationRadius;
-            if (leftArrow) { dashedLineStartX += leftArrowWidth };
-            if (rightArrow) { dashedLineEndX -= rightArrowWidth };
+            var stationDX = 0;
+            if (stations.length > 1) {
+                stationDX = (endX - startX) / (stations.length - 1);
+            }
 
-            var line = lineGroup
-                .line(dashedLineStartX, 0, dashedLineEndX, 0)
-                .stroke({
-                    color: "black",
-                    width: lineStroke,
-                    dasharray: lineDashArray
-                });
-
+            ///////////////////////////////////////////////////////////////////
+            // Draw lines
+            ///////////////////////////////////////////////////////////////////
+            for (var i = 0; i < linesSpec.length; i++) {
+                var x1 = startX + stationDX * linesSpec[i].startIndex;
+                var x2 = startX + stationDX * linesSpec[i].endIndex;
+                var lineStroke = {color: linesSpec[i].color, width: linesSpec[i].width}
+                if (linesSpec[i].dasharray) { lineStroke.dasharray = linesSpec[i].dasharray };
+                lineGroup.line(x1, 0, x2, 0).stroke(lineStroke)
+            }
 
             ///////////////////////////////////////////////////////////////////
             // Draw stations
             ///////////////////////////////////////////////////////////////////
-            var stationGroup = container.group();
-            var textGroup = container.group();
-
-            var firstStationX = stationRadius;
-            var lastStationX = width - stationRadius;
-            if (leftArrow) { firstStationX += leftArrowWidth};
-            if (rightArrow) { lastStationX -= rightArrowWidth};
-
-            var stationDX = 0;
-            if (stations.length > 1) {
-                stationDX = (lastStationX - firstStationX) / (stations.length - 1);
-            }
-
             for (var i = 0; i < stations.length; i++) {
-                var centerX = firstStationX + i * stationDX;
+                var centerX = startX + i * stationDX;
                 var centerY = 0;
                 var r = stationRadius - stationStroke / 2;
 
@@ -735,10 +833,17 @@
                                 .stroke({ color: "white", width: stationRadius / 3});
                 } else {
                     // Circle for normal stop
+
+                    for (var j = 0; j < linesSpec.length; j++) {
+                        if (i > linesSpec[j].startIndex && i <= linesSpec[j].endIndex) {
+                            var stopStrokeColor = linesSpec[j].color;
+                        }
+                    }
+
                     stationGroup.circle(2*r)
                                 .move(centerX - r, centerY - r)
                                 .fill("white")
-                                .stroke({ color: "black", width: stationStroke});
+                                .stroke({ color: stopStrokeColor, width: stationStroke});
                 }
 
                 // Station label
@@ -749,14 +854,20 @@
                     })
                     .rotate(stationTextAngle, centerX - stationTextSize / 2, 0)
                     .move(centerX - stationTextSize / 2, 0)
-                    .font({family: "sans-serif", weight: "bold", size: stationTextSize + "px"});
+                    .font({
+                        family: "sans-serif",
+                        weight: "bold",
+                        size: stationTextSize + "px"
+                    });
 
                 // Station accessibility label
                 if (accessibleStations.includes(stations[i])) {
                     var ISAX = centerX - stationTextSize / 2
                         + (text.length() + stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
                     var ISAY = (text.length() + stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
-                    textGroup.use(isaSymbol).rotate(stationTextAngle, ISAX, ISAY).move(ISAX, ISAY);
+                    textGroup.use(isaSymbol)
+                             .rotate(stationTextAngle, ISAX, ISAY)
+                             .move(ISAX, ISAY);
                 }
             }
 
@@ -774,8 +885,6 @@
             // Draw left arrow
             ///////////////////////////////////////////////////////////////////
             if (leftArrow) {
-                var leftArrowGroup = container.group();
-
                 // Arrow
                 var dy = stationRadius - stationStroke / 2;
                 var points = [
@@ -792,7 +901,7 @@
                               .stroke({color: leftArrowColor, width: stationStroke});
 
                 // Circle
-                var centerX = firstStationX;
+                var centerX = startX;
                 var centerY = lineY;
                 var r = stationRadius - stationStroke / 2;  
                 leftArrowGroup.circle(2 * r)
@@ -800,22 +909,7 @@
                               .fill("white")
                               .stroke({ color: leftArrowColor, width: stationStroke});
 
-                // Text label
-                var leftArrowTextLines = leftArrowText.split("//");
-                var leftArrowTextElt = leftArrowGroup
-                    .text(function(add) {
-                        for (var i = 0; i < leftArrowTextLines.length; i++) {
-                            add.tspan(leftArrowTextLines[i]).newLine();
-                        }
-                    })
-                    .stroke("none")
-                    .fill(leftArrowTextColor)
-                    .font({
-                        weight: "bold",
-                        size: arrowTextSize + "px",
-                        family: "sans-serif",
-                        anchor: "middle"
-                    });
+                leftArrowGroup.add(leftArrowTextElt);
 
                 // Adjust position based on measured height and width
                 var leftArrowTextX = stationRadius + leftArrowTextElt.bbox().w / 2;
@@ -827,8 +921,6 @@
             // Draw right arrow
             ///////////////////////////////////////////////////////////////////
             if (rightArrow) {
-                var rightArrowGroup = container.group();
-
                 // Arrow
                 var dy = stationRadius - stationStroke / 2;
                 var points = [
@@ -844,7 +936,7 @@
                                .stroke({color: rightArrowColor, width: stationStroke});
 
                 // Circle
-                var centerX = lastStationX;
+                var centerX = endX;
                 var centerY = lineY;
                 var r = stationRadius - stationStroke / 2;
                 rightArrowGroup.circle(2 * r)
@@ -852,22 +944,8 @@
                                .fill("white")
                                .stroke({ color: rightArrowColor, width: stationStroke});
 
-                // Text label
-                var rightArrowTextLines = rightArrowText.split("//");
-                var rightArrowTextElt = rightArrowGroup
-                    .text(function(add) {
-                        for (var i = 0; i < rightArrowTextLines.length; i++) {
-                            add.tspan(rightArrowTextLines[i]).newLine();
-                        }
-                    })
-                    .stroke("none")
-                    .fill(rightArrowTextColor)
-                    .font({
-                        weight: "bold",
-                        size: arrowTextSize + "px",
-                        family: "sans-serif",
-                        anchor: "middle"
-                    })
+                rightArrowGroup.add(rightArrowTextElt);
+                
 
                 // Adjust position based on measured height and width
                 var rightArrowTextX = width - stationRadius - rightArrowTextElt.bbox().w / 2;
@@ -881,18 +959,6 @@
             var measuredHeight = measuredTextHeight + measuredLineHeight + lineExtraSpace;
             diagram.size(measuredWidth + 2 * padding, measuredHeight + 2 * padding);
             container.move(padding, padding);
-
-            if (setWidths) {
-                // Compute new widths
-                leftArrowWidth = Math.round(leftArrowTextElt.bbox().w + stationRadius * 2);
-                rightArrowWidth = Math.round(rightArrowTextElt.bbox().w + stationRadius * 2);
-
-                document.getElementById("left-arrow-width").value = leftArrowWidth;
-                document.getElementById("right-arrow-width").value = rightArrowWidth;
-
-                // Redraw with new widths
-                draw();
-            }
         }
     </script>
 </body>
