@@ -30,9 +30,14 @@
             <input type="submit" id="save" value="Fill Stations" onclick="updateStations()" />
         </div>
 
-        <br /><br />
+        <br />
 
         <div onchange="draw()">
+            <div onkeyup="updateStationList()">
+                <label>Stations (one per line)</label><br />
+                <textarea id="stations" cols="20" rows="12"></textarea>
+            </div>
+            <br />
             <div>
                 <label>Width</label>
                 <input type="number" id="width" value="1000" />
@@ -40,18 +45,6 @@
             <div>
                 <label>Padding</label>
                 <input type="number" id="padding" value="20" />
-            </div>
-            <div>
-                <label>Stations (one per line)</label><br />
-                <textarea id="stations" cols="20" rows="12"></textarea>
-            </div>
-            <div>
-                <label>Accessible Stations (one per line)</label><br />
-                <textarea id="accessible-stations" cols="20" rows="8"></textarea>
-            </div>
-            <div>
-                <label>Skipped Stations (one per line)</label><br />
-                <textarea id="skipped-stations" cols="20" rows="4"></textarea>
             </div>
             <div>
                 <label>Station Text Size</label>
@@ -150,10 +143,19 @@
         </div>
     </div>
 
-    <div id="drawing" style="position: fixed; top: 8px; left: 30%; "></div>
+    <div style="position: fixed; top: 8px; left: 30%; ">
+        <div id="drawing"></div>
+        <br />
+        <div>
+            <table id="station-list" onchange="updateStationStateValues()"></table>
+        </div>
+    </div>
+
     <canvas id="canvas" style="opacity: 0;"></canvas>
 
     <script type="text/javascript">
+        var stationState = null;
+
         var ROUTE_PATTERNS = {
             redAshmont: {
                 name: "Red Line (Ashmont)",
@@ -384,11 +386,23 @@
         document.addEventListener("DOMContentLoaded", function() {
             // Default values (Newton Highlands / Kenmore)
             document.getElementById("stations").value = "NEWTON HIGHLANDS\nNEWTON CENTRE\nCHESTNUT HILL\nRESERVOIR\nBEACONSFIELD\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
-            document.getElementById("accessible-stations").value = "NEWTON CENTRE\nRESERVOIR\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
-            document.getElementById("skipped-stations").value = "BEACONSFIELD";
 
             // Set route pattern select values
             updateRoutePatterns();
+
+            stationState = {
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
+                "NEWTON CENTRE": { accessible: true, skipped: false },
+                "CHESTNUT HILL": { accessible: false, skipped: false },
+                "RESERVOIR": { accessible: true, skipped: false },
+                "BEACONSFIELD": { accessible: false, skipped: true },
+                "BROOKLINE HILLS": { accessible: true, skipped: false },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
+                "LONGWOOD": { accessible: true, skipped: false },
+                "FENWAY": { accessible: true, skipped: false },
+                "KENMORE": { accessible: true, skipped: false },
+            }
+            updateStationList();
 
             // Draw and automatically set arrow widths
             draw(true);
@@ -531,16 +545,9 @@
             }
 
             document.getElementById("stations").value = stations.join("\n");
-            
-            // Don't set accessible stations for now
-            // We're not confident about the accessibility of shuttle stops
-            // document.getElementById("accessible-stations").value = accessibleStations.join("\n");
-            document.getElementById("accessible-stations").value = "";
-
-
-            document.getElementById("skipped-stations").value = "";
             document.getElementById("left-arrow-color").value = routePattern.color;
             document.getElementById("right-arrow-color").value = routePattern.color;
+            document.getElementById("lines").value = "";
 
             if (includesFirstStop) {
                 document.getElementById("left-arrow-present").checked = false;
@@ -555,6 +562,9 @@
                 document.getElementById("right-arrow-present").checked = true;
                 document.getElementById("right-arrow-text").value = rightArrowText;
             }
+
+            stationState = null;
+            updateStationList();
 
             // Draw and automatically set widths
             draw(true);
@@ -622,6 +632,116 @@
             return "black";
         }
 
+        function copy(obj) {
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        function updateStationList() {
+            var stations = document.getElementById("stations").value.trim().split("\n");
+            var stationList = document.getElementById("station-list");
+            stationList.innerHTML = "";
+
+            if (stationState !== null) {
+                var stateOnly = [];
+                var arrayOnly = [];
+
+                // Find station in state which is not in array
+                for (station in stationState) {
+                    if (!stations.includes(station)) {
+                        stateOnly.push(station);
+                    }
+                }
+
+                // Find station in array which is not in state
+                for (var i = 0; i < stations.length; i++) {
+                    if (stationState[stations[i]] === undefined) {
+                        arrayOnly.push(stations[i]);
+                    }
+                }
+
+                // If either stateOnly or arrayOnly has more than one element, something strange
+                // has happened (maybe copy/paste) and we don't know what to do, so reset.
+                if (arrayOnly.length > 1 || stateOnly.length > 1) {
+                    stationState = null;
+                } else {
+                    arrayOnly = arrayOnly[0];
+                    stateOnly = stateOnly[0];
+
+                    if ((arrayOnly !== undefined) && (stateOnly !== undefined)) {
+                        // Change
+                        stationState[arrayOnly] = copy(stationState[stateOnly]);
+                        delete stationState[stateOnly];
+                    } else if (arrayOnly !== undefined) {
+                        // Addition
+                        stationState[arrayOnly] = { checked: false };
+                    } else if (stateOnly !== undefined) {
+                        // Deletion
+                        delete stationState[stateOnly];
+                    }
+                }
+            }
+
+            if (stationState === null) {
+                stationState = {};
+                for (var i = 0; i < stations.length; i++) {
+                    stationState[stations[i]] = {};
+                    for (var j = 0; j < COLUMNS.length; j++) {
+                        stationState[stations[i]][COLUMNS[j]] = false;
+                    }
+                }
+            }
+            
+            // header row
+            var rowElement = document.createElement("tr");
+            var cell = document.createElement("td");
+            cell.innerHTML = "station name";
+            rowElement.appendChild(cell);
+            for (var i = 0; i < COLUMNS.length; i++) {
+                var cell = document.createElement("td");
+                cell.innerHTML = COLUMNS[i];
+                rowElement.appendChild(cell);
+            }
+            stationList.appendChild(rowElement);
+
+            // input rows
+            for (var i = 0; i < stations.length; i++) {
+                var rowElement = document.createElement("tr");
+                var nameCell = document.createElement("td");
+                nameCell.innerHTML = stations[i];
+                rowElement.appendChild(nameCell);
+
+                for (var j = 0; j < COLUMNS.length; j++) {
+                    var cell = document.createElement("td");
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "station-" + i.toString() + "-" + COLUMNS[j];
+                    checkbox.checked = stationState[stations[i]][COLUMNS[j]];
+                    cell.appendChild(checkbox);
+                    rowElement.appendChild(cell);
+                }
+                
+                stationList.appendChild(rowElement);
+            }
+
+            draw();
+        }
+
+        var COLUMNS = ["accessible", "skipped"];
+
+        function updateStationStateValues() {
+            var stations = document.getElementById("stations").value.trim().split("\n");
+            var stationList = document.getElementById("station-list");
+
+            for (var i = 0; i < stations.length; i++) {
+                var stationPrefix = "station-" + i.toString() + "-";
+                for (var j = 0; j < COLUMNS.length; j++) {
+                    var checkbox = document.getElementById(stationPrefix + COLUMNS[j]);
+                    stationState[stations[i]][COLUMNS[j]] = checkbox.checked;
+                }
+            }
+
+            draw();
+        }
 
         function draw(setWidths) {
             // Clear existing diagram
@@ -633,8 +753,8 @@
             var lineExtraSpace = parseInt(document.getElementById("line-extra-space").value);
 
             var stations = document.getElementById("stations").value.trim().split("\n");
-            var accessibleStations = document.getElementById("accessible-stations").value.trim().split("\n");
-            var skippedStations = document.getElementById("skipped-stations").value.trim().split("\n");
+            // var accessibleStations = document.getElementById("accessible-stations").value.trim().split("\n");
+            // var skippedStations = document.getElementById("skipped-stations").value.trim().split("\n");
 
             var arrowTextSize = parseInt(document.getElementById("arrow-text-size").value);
             var leftArrow = document.getElementById("left-arrow-present").checked;
@@ -656,10 +776,9 @@
             var stationTextSize = parseInt(document.getElementById("station-text-size").value);
             var RT2 = Math.sqrt(2);
 
-            var linesSpec;
+            var linesSpec = [];
             var linesText = document.getElementById("lines").value.trim();
             if (linesText) {
-                linesSpec = [];
                 var linesArr = linesText.trim().split("\n");
                 for (var i = 0; i < linesArr.length; i++) {
                     var data = linesArr[i].split(",");
@@ -680,8 +799,7 @@
                 }
             } else {
                 // Default value
-                linesSpec = [
-                {startIndex: 0, endIndex: stations.length, color: "black", width: lineStroke, dasharray: lineDashArray}];
+                linesSpec = [{startIndex: 0, endIndex: stations.length - 1, color: "black", width: lineStroke, dasharray: lineDashArray}];
             }
 
             // Create SVG
@@ -793,7 +911,7 @@
                 var centerY = 0;
                 var r = stationRadius - stationStroke / 2;
 
-                if (skippedStations.includes(stations[i])) {
+                if (stationState[stations[i]].skipped) {
                     // Red Octagon for skipped stop
                     var side = 2 * r / (1 + RT2);
                     var points = [
@@ -853,7 +971,7 @@
                     });
 
                 // Station accessibility label
-                if (accessibleStations.includes(stations[i])) {
+                if (stationState[stations[i]].accessible) {
                     var ISAX = centerX - stationTextSize / 2
                         + (text.length() + stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
                     var ISAY = (text.length() + stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
