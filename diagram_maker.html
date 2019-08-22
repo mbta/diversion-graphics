@@ -116,11 +116,6 @@
             <br /><br />
             More options:
             <div>
-                <label>Lines</label>
-                <br />
-                <textarea id="lines" cols="20" rows="4"></textarea>
-            </div>
-            <div>
                 <label>Line Stroke</label>
                 <input type="number" id="line-stroke" value="20" />
             </div>
@@ -147,7 +142,12 @@
         <div id="drawing"></div>
         <br />
         <div>
-            <table id="station-list" onchange="updateStationStateValues()"></table>
+            <table id="station-list" onchange="updateStationStateValues()" style="border: 1px solid black; display: inline-block;"></table>
+            <div style="border: 1px solid black; display: inline-block; position: absolute; margin-left: 8px;" >
+                <label>Number of segments:</label><input type="number" id="num-lines" value="1" min="1" onchange="updateNumLines()" />
+                <br />
+                <table id="line-list" onchange="updateLineStateValues(event)"></table>
+            </div>
         </div>
     </div>
 
@@ -155,6 +155,7 @@
 
     <script type="text/javascript">
         var stationState = null;
+        var lineState = null;
 
         var ROUTE_PATTERNS = {
             redAshmont: {
@@ -403,6 +404,7 @@
                 "KENMORE": { accessible: true, skipped: false },
             }
             updateStationList();
+            updateNumLines();
 
             // Draw and automatically set arrow widths
             draw(true);
@@ -547,7 +549,6 @@
             document.getElementById("stations").value = stations.join("\n");
             document.getElementById("left-arrow-color").value = routePattern.color;
             document.getElementById("right-arrow-color").value = routePattern.color;
-            document.getElementById("lines").value = "";
 
             if (includesFirstStop) {
                 document.getElementById("left-arrow-present").checked = false;
@@ -565,6 +566,10 @@
 
             stationState = null;
             updateStationList();
+
+            lineState = null;
+            document.getElementById("num-lines").value = 1;
+            updateNumLines();
 
             // Draw and automatically set widths
             draw(true);
@@ -635,6 +640,8 @@
         function copy(obj) {
             return JSON.parse(JSON.stringify(obj));
         }
+
+        var COLUMNS = ["accessible", "skipped"];
 
         function updateStationList() {
             var stations = document.getElementById("stations").value.trim().split("\n");
@@ -723,10 +730,8 @@
                 stationList.appendChild(rowElement);
             }
 
-            draw();
+            updateNumLines();
         }
-
-        var COLUMNS = ["accessible", "skipped"];
 
         function updateStationStateValues() {
             var stations = document.getElementById("stations").value.trim().split("\n");
@@ -738,6 +743,197 @@
                     var checkbox = document.getElementById(stationPrefix + COLUMNS[j]);
                     stationState[stations[i]][COLUMNS[j]] = checkbox.checked;
                 }
+            }
+
+            draw();
+        }
+
+        function createStopDropdown(id) {
+            var stations = document.getElementById("stations").value.trim().split("\n");
+            var selectElt = document.createElement("select");
+            selectElt.id = id;
+
+            for (var i = 0; i < stations.length; i++) {
+                var optionElt = document.createElement("option");
+                optionElt.value = i;
+                optionElt.innerHTML = stations[i];
+                selectElt.appendChild(optionElt);
+            }
+
+            return selectElt;
+        }
+
+        function createStyleDropdown(id) {
+            var selectElt = document.createElement("select");
+            selectElt.id = id;
+
+            var options = ["shuttle", "red", "orange", "green", "blue", "CR", "silver", "bus"];
+            for (var i = 0; i < options.length; i++) {
+                var optionElt = document.createElement("option");
+                optionElt.value = options[i];
+                optionElt.innerHTML = options[i];
+                selectElt.appendChild(optionElt);
+            }
+
+            return selectElt;
+        }
+
+        function updateNumLines() {
+            var stations = document.getElementById("stations").value.trim().split("\n");
+            if (lineState === null) {
+                var lineStroke = parseInt(document.getElementById("line-stroke").value);
+                var lineDashArray = document.getElementById("line-dash-array").value;
+
+                lineState = [{fromStop: 0, toStop: stations.length - 1, style: "shuttle", color: "black", width: lineStroke, dasharray: lineDashArray}]
+            }
+
+            var numLines = parseInt(document.getElementById("num-lines").value);
+            var lineTable = document.getElementById("line-list");
+            lineTable.innerHTML = "";
+
+            var LINE_COLUMNS = ["fromStop", "toStop", "style"];
+
+            // header row
+            var rowElement = document.createElement("tr");
+            for (var i = 0; i < LINE_COLUMNS.length; i++) {
+                var cell = document.createElement("td");
+                cell.innerHTML = LINE_COLUMNS[i];
+                rowElement.appendChild(cell);
+            }
+
+            lineTable.appendChild(rowElement);
+
+            // input rows
+            for (var i = 0; i < numLines; i++) {
+                var rowElement = document.createElement("tr");
+                for (var j = 0; j < LINE_COLUMNS.length; j++) {
+                    var cell = document.createElement("td");
+                    if (LINE_COLUMNS[j] == "fromStop" || LINE_COLUMNS[j] == "toStop") {
+                        cell.appendChild(createStopDropdown(i.toString() + "-" + LINE_COLUMNS[j]));
+                    } else if (LINE_COLUMNS[j] == "style") {
+                        cell.appendChild(createStyleDropdown(i.toString() + "-" + LINE_COLUMNS[j]))
+                    }
+                    rowElement.appendChild(cell);
+                }
+
+                lineTable.appendChild(rowElement);
+            }
+
+            if (lineState.length == numLines) {
+                for (var i = 0; i < lineState.length; i++) {
+                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
+                        var id = i.toString() + "-" + LINE_COLUMNS[j];
+                        var elt = document.getElementById(id);
+                        var val = lineState[i][LINE_COLUMNS[j]];
+                        var opt = elt.querySelector('option[value="' + val + '"]');
+                        if (opt !== null) {
+                            opt.selected = true;
+                        }
+                    }
+                }
+            } else if (lineState.length > numLines) {
+                for (var i = 0; i < numLines - 1; i++) {
+                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
+                        var id = i.toString() + "-" + LINE_COLUMNS[j];
+                        var elt = document.getElementById(id);
+                        var val = lineState[i][LINE_COLUMNS[j]];
+                        elt.querySelector('option[value="' + val + '"]').selected = true;
+                    }
+                }
+
+                // Special case last line
+                var i = numLines - 1;
+                var fromStopElt = document.getElementById(i.toString() + "-fromStop");
+                fromStopElt.querySelector('option[value="' + lineState[i].fromStop + '"]').selected = true;
+
+                var toStopElt = document.getElementById(i.toString() + "-toStop");
+                toStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
+
+                var styleElt = document.getElementById(i.toString() + "-style");
+                styleElt.querySelector('option[value="' + lineState[i].style + '"]').selected = true;
+            } else if (lineState.length < numLines) {
+                for (var i = 0; i < lineState.length; i++) {
+                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
+                        var id = i.toString() + "-" + LINE_COLUMNS[j];
+                        var elt = document.getElementById(id);
+                        var val = lineState[i][LINE_COLUMNS[j]];
+                        elt.querySelector('option[value="' + val + '"]').selected = true;
+                    }
+                }
+
+                for (var i = lineState.length; i < numLines; i++) {
+                    var fromStopElt = document.getElementById(i.toString() + "-fromStop");
+                    fromStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
+
+                    var toStopElt = document.getElementById(i.toString() + "-toStop");
+                    toStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
+
+                    var styleElt = document.getElementById(i.toString() + "-style");
+                    styleElt.querySelector('option[value="shuttle"]').selected = true;
+                }
+            }
+
+            updateLineStateValues();
+        }
+
+        function updateLineStateValues(event) {
+            var numLines = parseInt(document.getElementById("num-lines").value);
+
+            // If updating a toStop, also update the next fromStop
+            if (event !== undefined && event.target.id.includes("toStop")) {
+                var idx = parseInt(event.target.id.split("-")[0]);
+                if (idx < numLines - 1) {
+                    var nextElt = document.getElementById((idx + 1).toString() + "-fromStop");
+                    nextElt.value = event.target.value;
+                }
+            }
+
+            // If updating a fromStop, also update the previous toStop
+            if (event !== undefined && event.target.id.includes("fromStop")) {
+                var idx = parseInt(event.target.id.split("-")[0]);
+                if (idx > 0) {
+                    var prevElt = document.getElementById((idx - 1).toString() + "-toStop");
+                    prevElt.value = event.target.value;
+                }
+            }
+
+            
+            var parsedLines = [];
+
+            for (var i = 0; i < numLines; i++) {
+                var fromStop = parseInt(document.getElementById(i.toString() + "-fromStop").value);
+                var toStop = parseInt(document.getElementById(i.toString() + "-toStop").value);
+                var style = document.getElementById(i.toString() + "-style").value;
+
+                if (fromStop < toStop) {
+                    var parsedLine = {};
+                    parsedLine.fromStop = fromStop;
+                    parsedLine.toStop = toStop;
+                    parsedLine.style = style;
+
+                    if (["red", "orange", "green", "blue", "purple", "CR", "silver", "bus"].includes(style)) {
+                        var stationRadius = parseInt(document.getElementById("station-radius").value);
+                        parsedLine.color = parseColor(style);
+                        parsedLine.width = stationRadius * 2;
+                    } else if (style == "shuttle") {
+                        var lineStroke = parseInt(document.getElementById("line-stroke").value);
+                        var lineDashArray = document.getElementById("line-dash-array").value;
+                        parsedLine.color = "black";
+                        parsedLine.width = lineStroke;
+                        parsedLine.dasharray = lineDashArray;
+                    }
+
+                    parsedLines.push(parsedLine);
+                }
+            }
+
+            if (parsedLines.length > 0) {
+                lineState = parsedLines;
+            } else {
+                var lineStroke = parseInt(document.getElementById("line-stroke").value);
+                var lineDashArray = document.getElementById("line-dash-array").value;
+                var stations = document.getElementById("stations").value.trim().split("\n");
+                lineState = [{fromStop: 0, toStop: stations.length - 1, style: "shuttle", color: "black", width: lineStroke, dasharray: lineDashArray}];
             }
 
             draw();
@@ -775,32 +971,6 @@
             var stationStroke = parseInt(document.getElementById("station-stroke").value);
             var stationTextSize = parseInt(document.getElementById("station-text-size").value);
             var RT2 = Math.sqrt(2);
-
-            var linesSpec = [];
-            var linesText = document.getElementById("lines").value.trim();
-            if (linesText) {
-                var linesArr = linesText.trim().split("\n");
-                for (var i = 0; i < linesArr.length; i++) {
-                    var data = linesArr[i].split(",");
-                    var parsedLine = {};
-                    parsedLine.startIndex = parseInt(data[0]);
-                    parsedLine.endIndex = parseInt(data[1]);
-
-                    if (["red", "orange", "green", "blue", "purple", "CR", "silver", "bus"].includes(data[2])) {
-                        parsedLine.color = parseColor(data[2].trim());
-                        parsedLine.width = stationRadius * 2;
-                    } else if (data[2] == "shuttle") {
-                        parsedLine.color = "black";
-                        parsedLine.width = lineStroke;
-                        parsedLine.dasharray = lineDashArray;
-                    }
-
-                    linesSpec.push(parsedLine);
-                }
-            } else {
-                // Default value
-                linesSpec = [{startIndex: 0, endIndex: stations.length - 1, color: "black", width: lineStroke, dasharray: lineDashArray}];
-            }
 
             // Create SVG
             var diagram = SVG('drawing')
@@ -895,11 +1065,11 @@
             ///////////////////////////////////////////////////////////////////
             // Draw lines
             ///////////////////////////////////////////////////////////////////
-            for (var i = 0; i < linesSpec.length; i++) {
-                var x1 = startX + stationDX * linesSpec[i].startIndex;
-                var x2 = startX + stationDX * linesSpec[i].endIndex;
-                var lineStroke = {color: linesSpec[i].color, width: linesSpec[i].width}
-                if (linesSpec[i].dasharray) { lineStroke.dasharray = linesSpec[i].dasharray };
+            for (var i = 0; i < lineState.length; i++) {
+                var x1 = startX + stationDX * lineState[i].fromStop;
+                var x2 = startX + stationDX * lineState[i].toStop;
+                var lineStroke = {color: lineState[i].color, width: lineState[i].width}
+                if (lineState[i].dasharray) { lineStroke.dasharray = lineState[i].dasharray };
                 lineGroup.line(x1, 0, x2, 0).stroke(lineStroke)
             }
 
@@ -940,12 +1110,12 @@
                 } else {
                     // Circle for normal stop
 
-                    for (var j = 0; j < linesSpec.length; j++) {
-                        if (i > linesSpec[j].startIndex && i <= linesSpec[j].endIndex) {
-                            var stopStrokeColor = linesSpec[j].color;
+                    for (var j = 0; j < lineState.length; j++) {
+                        if (i > lineState[j].fromStop && i <= lineState[j].toStop) {
+                            var stopStrokeColor = lineState[j].color;
 
-                            if ((stopStrokeColor == "black") && (j < linesSpec.length - 1) && (i == linesSpec[j].endIndex)) {
-                                stopStrokeColor = linesSpec[j + 1].color;
+                            if ((stopStrokeColor == "black") && (j < lineState.length - 1) && (i == lineState[j].toStop)) {
+                                stopStrokeColor = lineState[j + 1].color;
                             }
                         }
                     }
