@@ -1109,7 +1109,6 @@
                                 .stroke({ color: "white", width: stationRadius / 3});
                 } else {
                     // Circle for normal stop
-
                     for (var j = 0; j < lineState.length; j++) {
                         if (i > lineState[j].fromStop && i <= lineState[j].toStop) {
                             var stopStrokeColor = lineState[j].color;
@@ -1117,6 +1116,10 @@
                             if ((stopStrokeColor == "black") && (j < lineState.length - 1) && (i == lineState[j].toStop)) {
                                 stopStrokeColor = lineState[j + 1].color;
                             }
+                        }
+
+                        if ((i == 0) && (lineState[j].fromStop == 0)) {
+                            stopStrokeColor = lineState[j].color;
                         }
                     }
 
