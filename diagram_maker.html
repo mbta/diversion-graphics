@@ -3,591 +3,61 @@
 <head>
     <title>MBTA Diversion Graphic Tool</title>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.7.1/svg.min.js"></script>
+    <style type="text/css">
+        .container {
+            border: 1px solid black;
+            display: inline-block;
+            padding: 8px;
+        }
+    </style>
 </head>
 <body>
     <div style="display: flex;">
-        <div onchange="draw()" style="padding: 8px;">
-            <table>
-                <tr>
-                    <td><label>Width</label></td>
-                    <td><input type="number" id="width" value="1000" />
-                </tr>
-                <tr>
-                    <td><label>Download width</label></td>
-                    <td><input type="number" id="download-width" value="2600" /></td>
-                </tr>
-            </table>
-
-            <div>
-                <input type="submit" id="save" value="Save Diagram" onclick="save()" />
-            </div>
-
-            <br /><br />
-            More options:
-            <table>
-                <tr>
-                    <td><label>Padding</label></td>
-                    <td><input type="number" id="padding" value="20" /></td>
-                </tr>
-                <tr>
-                    <td><label>Station Text Size</label></td>
-                    <td><input type="number" id="station-text-size" value="24" /></td>
-                </tr>
-                <tr>
-                    <td><label>Arrow Text Size</label></td>
-                    <td><input type="number" id="arrow-text-size" value="16" /></td>
-                </tr>
-                <tr>
-                    <td><label>Line Stroke</label></td>
-                    <td><input type="number" id="line-stroke" value="20" /></td>
-                </tr>
-                <tr>
-                    <td><label>Line Dash Array</label></td>
-                    <td><input type="text" id="line-dash-array" value="30, 10" /></td>
-                </tr>
-                <tr>
-                    <td><label>Line Extra Space</label></td>
-                    <td><input type="number" id="line-extra-space" value="6" /></td>
-                </tr>
-                <tr>
-                    <td><label>Station Radius</label></td>
-                    <td><input type="number" id="station-radius" value="24" /></td>
-                </tr>
-                <tr>
-                    <td><label>Station Stroke</label></td>
-                    <td><input type="number" id="station-stroke" value="6" /></td>
-                </tr>
-            </table>
-        </div>
+        <table id="style-container" class="container" style="border: none;"></table>
         <div id="drawing"></div>
     </div>
-
     <div style="display: flex;">
-        <div style="border: 1px solid black; display: inline-block; padding: 8px;">
-            <div>
-                <select id="route-pattern" onchange="selectRoutePattern()">
-                    <option disabled selected value> -- route pattern -- </option>
-                </select>
-            </div>
-            <div>
-                <select id="route-direction" onchange="selectDirection()">
-                    <option disabled selected value> -- direction -- </option>
-                </select>
-            </div>
-            <div>
-                <select id="from-stop" onchange="selectFromStop()">
-                    <option disabled selected value> -- from stop -- </option>
-                </select>
-            </div>
-            <div> 
-                <select id="to-stop">
-                    <option disabled selected value> -- to stop -- </option>
-                </select>
-            </div>
-            <div>
-                <input type="submit" id="save" value="Fill Stations" onclick="updateStations()" />
-            </div>
-            <br />
-            <div onkeyup="updateStationList()">
-                <label>Stations (one per line)</label><br />
-                <textarea id="stations" cols="24" rows="12"></textarea>
-            </div>
-        </div>
-        <div style="border: 1px solid black; display: inline-block; padding: 8px;">
-            <table id="station-list" onchange="updateStationStateValues()"></table>
-        </div>
-        <div onchange="draw()" style="border: 1px solid black; display: inline-block; padding: 8px;">
-            <table>
-                <tr>
-                    <td><label>Left arrow?</label></td>
-                    <td><input type="checkbox" id="left-arrow-present" checked /></td>
-                </tr>
-                <tr>
-                    <td><label>Left arrow width</label></td>
-                    <td><input type="number" id="left-arrow-width" value="120" /></td>
-                </tr>
-                <tr>
-                    <td><label>Left arrow text</label></td>
-                    <td><input type="text" id="left-arrow-text" value="RIVERSIDE" /></td>
-                </tr>
-                <tr>
-                    <td><label>Left arrow color</label></td>
-                    <td>
-                        <select id="left-arrow-color">
-                            <option value="#00843D">Green Line</option>
-                            <option value="#ED8B00">Orange Line</option>
-                            <option value="#DA291C">Red Line</option>
-                            <option value="#003DA5">Blue Line</option>
-                            <option value="#80276C">Commuter Rail</option>
-                            <option value="#7C878E">Silver Line</option>
-                            <option value="#FFC72C">Bus</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr><td><br /></td></tr>
-                <tr>
-                    <td><label>Right arrow?</label></td>
-                    <td><input type="checkbox" id="right-arrow-present" checked /></td>
-                </tr>
-                <tr>
-                    <td><label>Right arrow width</label></td>
-                    <td><input type="number" id="right-arrow-width" value="120" /></td>
-                </tr>
-                <tr>
-                    <td><label>Right arrow text</label></td>
-                    <td><input type="text" id="right-arrow-text" value="PARK ST//& NORTH" /></td>
-                </tr>
-                <tr>
-                    <td><label>Right arrow color</label></td>
-                    <td>
-                        <select id="right-arrow-color">
-                            <option value="#00843D">Green Line</option>
-                            <option value="#ED8B00">Orange Line</option>
-                            <option value="#DA291C">Red Line</option>
-                            <option value="#003DA5">Blue Line</option>
-                            <option value="#80276C">Commuter Rail</option>
-                            <option value="#7C878E">Silver Line</option>
-                            <option value="#FFC72C">Bus</option>
-                        </select>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div style="border: 1px solid black; display: inline-block; padding: 8px;">
-            <label>Number of segments:</label><input type="number" id="num-lines" value="1" min="1" onchange="updateNumLines()" />
-            <br />
-            <table id="line-list" onchange="updateLineStateValues(event)"></table>
-        </div>
+        <div id="station-container" class="container"></div>
+        <div id="station-attribute-container" class="container"></div>
+        <div id="arrow-container" class="container"></div>
+        <div id="segment-container" class="container"></div>
     </div>
-
+    
     <canvas id="canvas" style="opacity: 0;"></canvas>
 
     <script type="text/javascript">
-        var stationState = null;
-        var lineState = null;
-
-        var ROUTE_PATTERNS = {
-            redAshmont: {
-                name: "Red Line (Ashmont)",
-                color: "#DA291C",
-                stops: [
-                    {name: "Ashmont", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
-                    {name: "Shawmut", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
-                    {name: "Fields Corner", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
-                    {name: "Savin Hill", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
-                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
-                ],
-                directions: ["Northbound", "Southbound"]
-            },
-            redBraintree: {
-                name: "Red Line (Braintree)",
-                color: "#DA291C",
-                stops: [
-                    {name: "Braintree", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
-                    {name: "Quincy Adams", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
-                    {name: "Quincy Center", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
-                    // {name: "Wollaston", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
-                    {name: "North Quincy", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
-                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
-                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
-                ],
-                directions: ["Northbound", "Southbound"]
-            },
-            mattapan: {
-                name: "Mattapan Line",
-                color: "#DA291C",
-                stops: [
-                    {name: "Mattapan", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Capen Street", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Valley Road", accessible: false, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Central Avenue", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Milton", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Butler", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Cedar Grove", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
-                    {name: "Ashmont", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]}
-                ],
-                directions: ["Inbound", "Outbound"]
-            },
-            orange: {
-                name: "Orange Line",
-                color: "#ED8B00",
-                stops: [
-                    {name: "Forest Hills", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Green Street", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Stony Brook", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Jackson Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Roxbury Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Ruggles", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Massachusetts Avenue", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Back Bay", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Tufts Medical Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Chinatown", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Downtown Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "State", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Haymarket", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "North Station", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Community College", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Sullivan Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Assembly", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Wellington", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Malden Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
-                    {name: "Oak Grove", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]}
-                ],
-                directions: ["Northbound", "Southbound"]
-            },
-            blue: {
-                name: "Blue Line",
-                color: "#003DA5",
-                stops: [
-                    {name: "Bowdoin", accessible: false, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Government Center", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "State", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Aquarium", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Maverick", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Airport", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Wood Island", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Orient Heights", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Suffolk Downs", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Beachmont", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Revere Beach", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
-                    {name: "Wonderland", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]}
-                ],
-                directions: ["Eastbound", "Westbound"]
-            },
-            greenB: {
-                name: "Green Line (B Branch)",
-                color: "#00843D",
-                stops: [
-                    {name: "Boston College", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "South Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Chestnut Hill Avenue", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Chiswick Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Sutherland Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Washington Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Warren Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Allston Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Griggs Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Harvard Avenue", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Packards Corner", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Babcock Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Pleasant Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Boston University West", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Boston University Central", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Boston University East", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Blandford Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Kenmore", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Copley", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Arlington", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Boylston", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
-                    {name: "Park Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]}
-                ],
-                directions: ["Eastbound", "Westbound"]
-            },
-            greenC: {
-                name: "Green Line (C Branch)",
-                color: "#00843D",
-                stops: [
-                    {name: "Cleveland Circle", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Englewood Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Dean Road", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Tappan Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Washington Square", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Fairbanks Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Brandon Hall", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Summit Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Coolidge Corner", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Kent Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Hawes Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Saint Marys Street", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
-                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
-                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
-                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
-                    {name: "North Station", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]}
-                ],
-                directions: ["Eastbound", "Westbound"]
-            },
-            greenD: {
-                name: "Green Line (D Branch)",
-                color: "#00843D",
-                stops: [
-                    {name: "Riverside", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Woodland", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Waban", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Eliot", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Newton Highlands", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Newton Centre", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Chestnut Hill", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Reservoir", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Beaconsfield", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Brookline Hills", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Brookline Village", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Longwood", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Fenway", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
-                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
-                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
-                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Government Center", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]}
-                ],
-                directions: ["Eastbound", "Westbound"]
-            },
-            greenE: {
-                name: "Green Line (E Branch)",
-                color: "#00843D",
-                stops: [
-                    {name: "Heath Street", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Back of the Hill", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Riverway", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Mission Park", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Fenwood Road", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Brigham Circle", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Longwood Medical Area", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Museum of Fine Arts", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Northeastern University", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Symphony", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Prudential", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
-                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
-                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
-                    {name: "North Station", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
-                    {name: "Science Park", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
-                    {name: "Lechmere", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]}
-                ],
-                directions: ["Eastbound", "Westbound"]
-            }
-        }
+        var state = null;
 
         document.addEventListener("DOMContentLoaded", function() {
-            // Default values (Newton Highlands / Kenmore)
-            document.getElementById("stations").value = "NEWTON HIGHLANDS\nNEWTON CENTRE\nCHESTNUT HILL\nRESERVOIR\nBEACONSFIELD\nBROOKLINE HILLS\nBROOKLINE VILLAGE\nLONGWOOD\nFENWAY\nKENMORE";
-
-            // Set route pattern select values
-            updateRoutePatterns();
-
-            stationState = {
-                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
-                "NEWTON CENTRE": { accessible: true, skipped: false },
-                "CHESTNUT HILL": { accessible: false, skipped: false },
-                "RESERVOIR": { accessible: true, skipped: false },
-                "BEACONSFIELD": { accessible: false, skipped: true },
-                "BROOKLINE HILLS": { accessible: true, skipped: false },
-                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
-                "LONGWOOD": { accessible: true, skipped: false },
-                "FENWAY": { accessible: true, skipped: false },
-                "KENMORE": { accessible: true, skipped: false },
-            }
-            updateStationList();
-            updateNumLines();
-
-            // Draw and automatically set arrow widths
-            draw(true);
+            state = getDefaultState();
+            buildDOMFromState(state);
         });
 
-        function updateRoutePatterns() {
-            var select = document.getElementById("route-pattern");
+        var RT2 = Math.sqrt(2);
+        var COLOR_OPTIONS = [
+            { value: "red" , name: "Red Line"},
+            { value: "orange" , name: "Orange Line"},
+            { value: "green" , name: "Green Line"},
+            { value: "blue" , name: "Blue Line"},
+            { value: "purple" , name: "Commuter Rail"},
+            { value: "silver" , name: "Silver Line"},
+            { value: "bus" , name: "Bus"},
+        ];
+        var STATION_ATTRIBUTES = ["accessible", "skipped"];
 
-            for (var routePatternId in ROUTE_PATTERNS) {
-                var routePattern = ROUTE_PATTERNS[routePatternId];
-                var elt = document.createElement("option");
-                elt.value = routePatternId;
-                elt.innerHTML = routePattern.name;
-                select.appendChild(elt);
-            }
-        }
-
-        function selectRoutePattern() {
-            var routePatternId = document.getElementById("route-pattern").value;
-            var routePattern = ROUTE_PATTERNS[routePatternId];
-            var directions = routePattern.directions;
-
-            var select = document.getElementById("route-direction");
-            select.innerHTML = "";
-            for (var i = 0; i < directions.length; i++) {
-                var elt = document.createElement("option");
-                elt.value = directions[i];
-                elt.innerHTML = directions[i];
-                select.appendChild(elt);
-            }
-
-            selectDirection();
-        }
-
-        function selectDirection() {
-            var routePatternId = document.getElementById("route-pattern").value;
-            var direction = document.getElementById("route-direction").value;
-            var routePattern = ROUTE_PATTERNS[routePatternId];
-
-            var directions = routePattern.directions;
-            var stops = routePattern.stops.slice(0);
-
-            if (direction == directions[1]) {
-                stops.reverse();
-            }
-
-            var select = document.getElementById("from-stop");
-            select.innerHTML = "";
-            for (var i = 0; i < stops.length; i++) {
-                var stop = stops[i];
-                var elt = document.createElement("option");
-                elt.value = stop.name.toUpperCase();
-                elt.innerHTML = stop.name.toUpperCase();
-                select.appendChild(elt);
-            }
-
-            selectFromStop();
-        }
-
-        function selectFromStop() {
-            var routePatternId = document.getElementById("route-pattern").value;
-            var direction = document.getElementById("route-direction").value;
-            var fromStop = document.getElementById("from-stop").value;
-            var routePattern = ROUTE_PATTERNS[routePatternId];
-            var directions = routePattern.directions;
-            var stops = routePattern.stops.slice(0);
-
-            if (direction == directions[1]) {
-                stops.reverse();
-            }
-
-            var foundStop = false;
-            var select = document.getElementById("to-stop");
-            select.innerHTML = "";
-            for (var i = 0; i < stops.length; i++) {
-                var stop = stops[i];
-
-                if (foundStop) {
-                    var elt = document.createElement("option");
-                    elt.value = stop.name.toUpperCase();
-                    elt.innerHTML = stop.name.toUpperCase();
-                    select.appendChild(elt);
-                }
-
-                if (stop.name.toUpperCase() === fromStop) {
-                    foundStop = true;
-                }
-            }
-        }
-
-        function updateStations() {
-            var routePatternId = document.getElementById("route-pattern").value;
-            var direction = document.getElementById("route-direction").value;
-            var fromStop = document.getElementById("from-stop").value;
-            var toStop = document.getElementById("to-stop").value;
-            var routePattern = ROUTE_PATTERNS[routePatternId];
-            var directions = routePattern.directions;
-            var stops = routePattern.stops.slice(0);
-
-            if (direction == directions[1]) {
-                stops.reverse();
-            }
-
-            var foundFromStop = false;
-            var foundToStop = false;
-            var includesFirstStop = false;
-            var includesLastStop = false;
-            var leftArrowText = null;
-            var rightArrowText = null;
-
-            var stations = [];
-            var accessibleStations = [];
-            for (var i = 0; i < stops.length; i++) {
-                var stop = stops[i];
-
-                if (stop.name.toUpperCase() === fromStop) {
-                    foundFromStop = true;
-                    leftArrowText = (direction == directions[0]) ? stop.destinations[1] : stop.destinations[0];
-                }
-
-                if (foundFromStop && !foundToStop) {
-                    stations.push(stop.name.toUpperCase());
-                    if (stop.accessible === true) {
-                        accessibleStations.push(stop.name.toUpperCase());
-                    }
-
-                    if (i == 0) {
-                        includesFirstStop = true;
-                    }
-
-                    if (i == stops.length - 1) {
-                        includesLastStop = true;
-                    }
-                }
-
-                if (stop.name.toUpperCase() === toStop) {
-                    foundToStop = true;
-                    rightArrowText = (direction == directions[0]) ? stop.destinations[0] : stop.destinations[1];
-                }
-            }
-
-            document.getElementById("stations").value = stations.join("\n");
-            document.getElementById("left-arrow-color").value = routePattern.color;
-            document.getElementById("right-arrow-color").value = routePattern.color;
-
-            if (includesFirstStop) {
-                document.getElementById("left-arrow-present").checked = false;
-            } else {
-                document.getElementById("left-arrow-present").checked = true;
-                document.getElementById("left-arrow-text").value = leftArrowText;
-            }
-
-            if (includesLastStop) {
-                document.getElementById("right-arrow-present").checked = false;
-            } else {
-                document.getElementById("right-arrow-present").checked = true;
-                document.getElementById("right-arrow-text").value = rightArrowText;
-            }
-
-            stationState = null;
-            updateStationList();
-
-            lineState = null;
-            document.getElementById("num-lines").value = 1;
-            updateNumLines();
-
-            // Draw and automatically set widths
-            draw(true);
-        }
+        var STYLE_ATTRIBUTES = [
+            { id: "padding", attribute: "padding", type: "number", label: "Padding", default: 20 },
+            { id: "station-text-size", attribute: "stationTextSize", type: "number", label: "Station Text Size", default: 24 },
+            { id: "arrow-text-size", attribute: "arrowTextSize", type: "number", label: "Arrow Text Size", default: 16 },
+            { id: "line-stroke", attribute: "lineStroke", type: "number", label: "Line Stroke", default: 20 },
+            { id: "line-dasharray", attribute: "lineDasharray", type: "text", label: "Line Dash Array", default: "30, 10" },
+            { id: "line-extra-space", attribute: "lineExtraSpace", type: "number", label: "Line Extra Space", default: 6 },
+            { id: "station-radius", attribute: "stationRadius", type: "number", label: "Station Radius", default: 24 },
+            { id: "station-stroke", attribute: "stationStroke", type: "number", label: "Station Stroke", default: 6 },
+        ];
 
         // Adapted from https://stackoverflow.com/questions/28226677/save-inline-svg-as-jpeg-png-svg
         function save() {
-            draw();
-
             var downloadWidth = parseInt(document.getElementById("download-width").value);
 
             var svg = document.querySelector('svg');
@@ -634,356 +104,927 @@
             img.src = url;
         }
 
+        function copy(obj) {
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        function getStyleFromDOM() {
+            var styleState = {};
+            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
+                var style = STYLE_ATTRIBUTES[i];
+                var value = document.getElementById(style.id).value;
+                if (style.type == "number") {
+                    value = parseInt(value);
+                } else if (state.type == "textarea") {
+                    value = value.trim().split("\n");
+                }
+
+                styleState[style.attribute] = value;
+            }
+
+            return styleState;
+        }
+
+        function getSelectedFromDOM() {
+            var selectedState = {};
+
+            selectedState.routePattern = document.getElementById("route-pattern").value;
+            selectedState.direction = document.getElementById("route-direction").value;
+            selectedState.fromStop = document.getElementById("station-from-stop").value;
+            selectedState.toStop = document.getElementById("station-to-stop").value;
+
+            if (selectedState.routePattern == "null") { selectedState.routePattern = null; }
+            if (selectedState.direction == "null") { selectedState.direction = null; }
+            if (selectedState.fromStop == "null") { selectedState.fromStop = null; }
+            if (selectedState.toStop == "null") { selectedState.toStop = null; }
+
+            // Set default values for stop dropdowns
+            if (selectedState.routePattern !== null) {
+                var directions = ROUTE_PATTERNS[selectedState.routePattern].directions;
+                if (selectedState.direction === null) {
+                    selectedState.direction = directions[0];
+                }
+
+                if (!directions.includes(selectedState.direction)) {
+                    selectedState.direction = directions[0];
+                }
+            }
+
+
+            if (selectedState.routePattern !== null && selectedState.direction !== null) {
+                var routePattern = ROUTE_PATTERNS[selectedState.routePattern];
+                var directions = routePattern.directions;
+                var stops = routePattern.stops.slice(0);
+                if (selectedState.direction == directions[1]) {
+                    stops.reverse();
+                }
+                
+                var stopNames = [];
+                for (var i = 0; i < stops.length; i++) {
+                    stopNames.push(stops[i].name.toUpperCase());
+                }
+
+                if (selectedState.fromStop !== null && !stopNames.includes(selectedState.fromStop)) {
+                    selectedState.fromStop = stopNames[0];
+                }
+
+                if (selectedState.toStop !== null && !stopNames.includes(selectedState.toStop)) {
+                    selectedState.toStop = stopNames[stopNames.length - 1];
+                }
+
+                // Reverse direction
+                if (selectedState.fromStop !== null && selectedState.toStop !== null) {
+                    var fromStopIndex = stopNames.indexOf(selectedState.fromStop);
+                    var toStopIndex = stopNames.indexOf(selectedState.toStop);
+                    if (fromStopIndex >= toStopIndex) {
+                        selectedState.fromStop = stopNames[toStopIndex];
+                        selectedState.toStop = stopNames[fromStopIndex];
+                    }
+                }
+            }
+
+            return selectedState;
+        }
+
+        function getStationsFromDOM() {
+            var stations = [];
+            var stationsText = document.getElementById("stations").value;
+            var stationLines = stationsText.trim().split("\n");
+
+            for (var i = 0; i < stationLines.length; i++) {
+                var stationLine = stationLines[i];
+                if (stationLine !== "") {
+                    stations.push(stationLine.toUpperCase());
+                }
+            }
+
+            return stations;
+        }
+
+        function updateStationAttributes() {
+            // Station attributes -- update keys
+            // Find stations which are in attributes but not stations array
+            var attributesOnly = [];
+            for (var station in state.stationAttributes) {
+                if (!state.stations.includes(station)) {
+                    attributesOnly.push(station);
+                }
+            }
+
+            // Find stations which are in station array but not attributes
+            var arrayOnly = [];
+            for (var i = 0; i < state.stations.length; i++) {
+                var station = state.stations[i];
+                if (state.stationAttributes[station] === undefined) {
+                    arrayOnly.push(station);
+                }
+            }
+
+            if (attributesOnly.length > 1 || arrayOnly.length > 1) {
+                // If there's more than one change, we don't know what to do, so revert to default values
+                state.stationAttributes = {};
+            } else {
+                attributesOnly = attributesOnly[0];
+                arrayOnly = arrayOnly[0];
+
+                if ((arrayOnly !== undefined) && (attributesOnly !== undefined)) {
+                    // Change
+                    state.stationAttributes[arrayOnly] = copy(state.stationAttributes[attributesOnly]);
+                    delete state.stationAttributes[attributesOnly];
+                } else if (arrayOnly !== undefined) {
+                    // Addition
+                    state.stationAttributes[arrayOnly] = {};
+                    for (var i = 0; i < STATION_ATTRIBUTES.length; i++) {
+                        state.stationAttributes[arrayOnly][STATION_ATTRIBUTES[i]] = false;
+                    }
+                } else if (attributesOnly !== undefined) {
+                    // Deletion
+                    delete state.stationAttributes[attributesOnly];
+                }
+            }
+
+            if (Object.entries(state.stationAttributes) == 0) {
+                // Fill default station attributes
+                for (var i = 0; i < state.stations.length; i++) {
+                    state.stationAttributes[state.stations[i]] = {};
+                    for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
+                        state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]] = false;
+                    }
+                }
+            } else {
+                // Station attributes -- values
+                for (var i = 0; i < state.stations.length; i++) {
+                    var stationPrefix = "station-" + i.toString() + "-";
+                    for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
+                        var checkbox = document.getElementById(stationPrefix + STATION_ATTRIBUTES[j]);
+                        if (checkbox !== null) {
+                            state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]] = checkbox.checked;
+                        }
+                    }
+                }
+            }
+        }
+
+        function getArrowFromDOM(direction) {
+            return {
+                present: document.getElementById(direction + "-arrow-present").checked,
+                width: parseInt(document.getElementById(direction + "-arrow-width").value),
+                text: document.getElementById(direction + "-arrow-text").value,
+                color: document.getElementById(direction + "-arrow-color").value
+            };
+        }
+
+        function getSegmentsFromDOM() {
+            if (state.segments.length == state.segmentCount) {
+                var newSegments = [];
+                for (var i = 0; i < state.segments.length; i++) {
+                    var segment = state.segments[i];
+
+                    newSegments.push({
+                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                    });
+                }
+
+                return newSegments;
+            } else if (state.segments.length > state.segmentCount) {
+                var newSegments = [];
+                for (var i = 0; i < state.segmentCount - 1; i++) {
+                    var segment = state.segmentCount[i];
+                    newSegments.push({
+                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                    });
+                }
+
+                // Special case last line
+                newSegments.push({
+                    fromStopIndex: state.segments[state.segmentCount - 1].fromStopIndex,
+                    toStopIndex: state.stations.length - 1,
+                    style: state.segments[state.segmentCount - 1].style,
+                });
+
+                return newSegments;
+            } else if (state.segments.length < state.segmentCount) {
+                var newSegments = [];
+                for (var i = 0; i < state.segments.length; i++) {
+                    var segment = state.segments[i];
+
+                    newSegments.push({
+                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                    });
+                }
+
+                // Additional lines
+                for (var i = state.segments.length; i < state.segmentCount; i++) {
+                    newSegments.push({
+                        fromStopIndex: state.stations.length - 1,
+                        toStopIndex: state.stations.length - 1,
+                        style: "shuttle"
+                    });
+                }
+
+                return newSegments;
+            }
+        }
+
+        function getStateFromDOM() {
+            state.width = parseInt(document.getElementById("width").value);
+            state.downloadWidth = parseInt(document.getElementById("download-width").value);
+            state.style = getStyleFromDOM();
+            state.selected = getSelectedFromDOM();
+            
+            // Stations
+            state.stationsText = document.getElementById("stations").value;
+            state.stations = getStationsFromDOM();
+            updateStationAttributes();
+
+            // Arrows
+            state.autoWidth = document.getElementById("auto-width").checked;
+            state.leftArrow = getArrowFromDOM("left");
+            state.rightArrow = getArrowFromDOM("right");
+
+            // Segments
+            state.segmentCount = parseInt(document.getElementById("segment-count").value);
+            state.segments = getSegmentsFromDOM();
+
+            buildDOMFromState(state);
+        }
+
+        function getDefaultState() {
+            var defaultStyle = {};
+            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
+                var style = STYLE_ATTRIBUTES[i];
+                defaultStyle[style.attribute] = style.default;
+            }
+
+            var defaultSelected = {
+                routePattern: null,
+                direction: null,
+                fromStop: null,
+                toStop: null
+            };
+
+            var stations = [
+                "NEWTON HIGHLANDS",
+                "NEWTON CENTRE",
+                "CHESTNUT HILL",
+                "RESERVOIR",
+                "BEACONSFIELD",
+                "BROOKLINE HILLS",
+                "BROOKLINE VILLAGE",
+                "LONGWOOD",
+                "FENWAY",
+                "KENMORE"
+            ];
+            
+            var stationAttributes = {
+                "NEWTON HIGHLANDS": {accessible: false, skipped: false},
+                "NEWTON CENTRE": {accessible: true, skipped: false},
+                "CHESTNUT HILL": {accessible: false, skipped: false},
+                "RESERVOIR": {accessible: true, skipped: false},
+                "BEACONSFIELD": {accessible: false, skipped: true},
+                "BROOKLINE HILLS": {accessible: true, skipped: false},
+                "BROOKLINE VILLAGE": {accessible: true, skipped: false},
+                "LONGWOOD": {accessible: true, skipped: false},
+                "FENWAY": {accessible: true, skipped: false},
+                "KENMORE": {accessible: true, skipped: false}
+            };
+
+            var leftArrow = {
+                present: true,
+                width: 120,
+                text: "RIVERSIDE",
+                color: "green"
+            }
+
+            var rightArrow = {
+                present: true,
+                width: 120,
+                text: "PARK ST//& NORTH",
+                color: "green"
+            }
+
+            var segments = [{
+                fromStopIndex: 0,
+                toStopIndex: stations.length - 1,
+                style: "shuttle"
+            }];
+
+            return {
+                width: 1000,
+                downloadWidth: 2600,
+                style: defaultStyle,
+                selected: defaultSelected,
+                stationsText: stations.join("\n"),
+                stations: stations,
+                stationAttributes: stationAttributes,
+                leftArrow: leftArrow,
+                rightArrow: rightArrow,
+                autoWidth: true,
+                segmentCount: 1,
+                segments: segments
+            };
+        }
+
+        function getOrderedStops(state) {
+            var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+            var directions = routePattern.directions;
+            var stops = routePattern.stops.slice(0);
+
+            if (state.selected.direction == directions[1]) {
+                stops.reverse();
+            }
+
+            return stops;
+        }
+
+        function buildTableInput(id, value, type, label) {
+            var containerElt = document.createElement("tr");
+
+            var labelElt = document.createElement("td");
+            labelElt.innerHTML = label;
+
+            var inputCellElt = document.createElement("td");
+            var inputElt = document.createElement("input");
+            inputElt.id = id;
+            inputElt.type = type;
+
+            if (type == "checkbox") {
+                inputElt.checked = value;
+            } else {
+                inputElt.value = value;
+            }            
+            
+            inputElt.onchange = function() { getStateFromDOM(); }
+            containerElt.appendChild(labelElt);
+            inputCellElt.appendChild(inputElt);
+            containerElt.appendChild(inputCellElt);
+
+            return containerElt;
+        }
+
+        function buildTableSelect(id, options, selectedValue, label) {
+            var containerElt = document.createElement("td");
+            var selectElt = document.createElement("select");
+            selectElt.id = id;
+
+            if (label !== undefined) {
+                var labelElt = document.createElement("option");
+                labelElt.disabled = true;
+                labelElt.selected = true;
+                labelElt.innerHTML = label;
+                labelElt.value = null;
+                selectElt.appendChild(labelElt);
+            }
+
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                var optionElt = document.createElement("option");
+                optionElt.value = option.value;
+                optionElt.innerHTML = option.name;
+                selectElt.appendChild(optionElt);
+            }
+
+            selectElt.onchange = function() { getStateFromDOM(); }
+            selectElt.value = selectedValue;
+            containerElt.appendChild(selectElt);
+            return containerElt;
+        }
+
+        function buildSelect(id, options, selectedValue, label) {
+            var containerElt = document.createElement("div");
+            var selectElt = document.createElement("select");
+            selectElt.id = id;
+
+            if (label !== undefined) {
+                var labelElt = document.createElement("option");
+                labelElt.disabled = true;
+                labelElt.selected = true;
+                labelElt.innerHTML = label;
+                labelElt.value = null;
+                selectElt.appendChild(labelElt);
+            }
+
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                var optionElt = document.createElement("option");
+                optionElt.value = option.value;
+                optionElt.innerHTML = option.name;
+                selectElt.appendChild(optionElt);
+            }
+
+            selectElt.onchange = function() { getStateFromDOM(); }
+            selectElt.value = selectedValue;
+            containerElt.appendChild(selectElt);
+            return containerElt;
+        }
+
+        function buildStylesFromState(state) {
+            // Widths
+            var container = document.getElementById("style-container");
+            container.innerHTML = "";
+
+            var table = document.createElement("table");
+
+            table.appendChild(
+                buildTableInput("width", state.width, "number", "Width")
+            );
+            table.appendChild(
+                buildTableInput("download-width", state.downloadWidth, "number", "Download width")
+            );
+
+            // Save button
+            var saveButton = document.createElement("input");
+            saveButton.type = "submit";
+            saveButton.value = "Save Diagram";
+            saveButton.onclick = function() { save(); }
+            table.appendChild(saveButton);
+
+            var blankLine = document.createElement("tr");
+            blankLine.appendChild(document.createElement("br"));
+            table.appendChild(blankLine);
+
+            // Global style parameters
+            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
+                var style = STYLE_ATTRIBUTES[i];
+                table.appendChild(
+                    buildTableInput(style.id, state.style[style.attribute], style.type, style.label)
+                );
+            }
+
+            container.appendChild(table);
+        }
+
+        function buildStationsFromState(state) {
+            // Stations
+            var stationContainer = document.getElementById("station-container");
+            stationContainer.innerHTML = "";
+
+            // Route pattern picker
+            var routePatternOptions = [];
+            for (var routePatternID in ROUTE_PATTERNS) {
+                routePatternOptions.push({
+                    name: ROUTE_PATTERNS[routePatternID].name,
+                    value: routePatternID
+                });
+            }
+            var routePatternSelect = buildSelect(
+                "route-pattern",
+                routePatternOptions,
+                state.selected.routePattern,
+                "-- route pattern --"
+            );
+            stationContainer.appendChild(routePatternSelect);
+
+            // Direction picker
+            var directionOptions = [];
+            if (state.selected.routePattern !== null) {
+                var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+                for (var i = 0; i < routePattern.directions.length; i++) {
+                    directionOptions.push({
+                        name: routePattern.directions[i],
+                        value: routePattern.directions[i]
+                    });
+                }
+            }
+            var directionSelect = buildSelect(
+                "route-direction",
+                directionOptions,
+                state.selected.direction,
+                "-- direction --"
+            );
+            stationContainer.appendChild(directionSelect);
+
+            // From stop picker
+            var fromStopOptions = [];
+            if (state.selected.direction !== null) {
+                var stops = getOrderedStops(state);
+                for (var i = 0; i < stops.length; i++) {
+                    var stop = stops[i];
+                    fromStopOptions.push({
+                        name: stop.name.toUpperCase(),
+                        value: stop.name.toUpperCase()
+                    })
+                }
+            }
+            var fromStopSelect = buildSelect(
+                "station-from-stop",
+                fromStopOptions,
+                state.selected.fromStop,
+                "-- from stop --"
+            );
+            stationContainer.appendChild(fromStopSelect);
+
+            // To stop picker
+            var toStopOptions = [];
+            if (state.selected.direction !== null) {
+                var stops = getOrderedStops(state);
+                for (var i = 0; i < stops.length; i++) {
+                    var stop = stops[i];
+                    toStopOptions.push({
+                        name: stop.name.toUpperCase(),
+                        value: stop.name.toUpperCase()
+                    })
+                }
+            }
+            var toStopSelect = buildSelect(
+                "station-to-stop",
+                toStopOptions,
+                state.selected.toStop,
+                "-- to stop --"
+            );
+            stationContainer.appendChild(toStopSelect);
+
+            // Fill stations button
+            var fillStationsButton = document.createElement("input");
+            fillStationsButton.type = "submit";
+            fillStationsButton.value = "Fill Stations";
+            fillStationsButton.onclick = function() { fillStations(); }
+            stationContainer.appendChild(fillStationsButton);
+
+
+            stationContainer.appendChild(document.createElement("br"));
+
+
+            // Stations Textarea
+            var stationsTextarea = document.createElement("textarea");
+            stationsTextarea.id = "stations";
+            stationsTextarea.cols = 24;
+            stationsTextarea.rows = 12;
+            stationsTextarea.onkeyup = function () { getStateFromDOM(); }
+            stationsTextarea.value = state.stationsText;
+            stationContainer.appendChild(stationsTextarea);
+        }
+
+        function buildStationGridFromState(state) {
+            var container = document.getElementById("station-attribute-container");
+            container.innerHTML = "";
+            var table = document.createElement("table");
+
+            // header row
+            var rowElement = document.createElement("tr");
+            var cell = document.createElement("td");
+            cell.innerHTML = "station name";
+            rowElement.appendChild(cell);
+            for (var i = 0; i < STATION_ATTRIBUTES.length; i++) {
+                var cell = document.createElement("td");
+                cell.innerHTML = STATION_ATTRIBUTES[i];
+                rowElement.appendChild(cell);
+            }
+            table.appendChild(rowElement);
+
+            // input rows
+            for (var i = 0; i < state.stations.length; i++) {
+                var rowElement = document.createElement("tr");
+                var nameCell = document.createElement("td");
+                nameCell.innerHTML = state.stations[i];
+                rowElement.appendChild(nameCell);
+
+                for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
+                    var cell = document.createElement("td");
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = "station-" + i.toString() + "-" + STATION_ATTRIBUTES[j];
+                    checkbox.checked = state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]];
+                    checkbox.onchange = function() { getStateFromDOM(); }
+                    cell.appendChild(checkbox);
+                    rowElement.appendChild(cell);
+                }
+                
+                table.appendChild(rowElement);
+            }
+            container.appendChild(table);
+        }
+
+        function buildArrowsFromState(state) {
+            var container = document.getElementById("arrow-container");
+            container.innerHTML = "";
+
+            var table = document.createElement("table");
+
+            // Checkbox to set arrow widths automatically
+            var row = document.createElement("tr");
+            var autoWidthLabel = document.createElement("td");
+            autoWidthLabel.innerHTML = "set widths automatically?";
+            var autoWidthCell = document.createElement("td");
+            var autoWidthCheckbox = document.createElement("input");
+            autoWidthCheckbox.id = "auto-width";
+            autoWidthCheckbox.type = "checkbox";
+            autoWidthCheckbox.checked = state.autoWidth;
+            autoWidthCheckbox.onchange = function() { getStateFromDOM(); }
+            autoWidthCell.appendChild(autoWidthCheckbox);
+            row.appendChild(autoWidthLabel);
+            row.appendChild(autoWidthCell);
+            table.appendChild(row);
+
+            for (var i in ["left", "right"]) {
+                var direction = ["left", "right"][i];
+                var arrowState;
+                if (direction == "left") {
+                    arrowState = state.leftArrow;
+                } else {
+                    arrowState = state.rightArrow;
+                }
+
+                table.appendChild(
+                    buildTableInput(direction + "-arrow-present", arrowState.present, "checkbox", direction + " arrow present?"),
+                );
+                table.appendChild(
+                    buildTableInput(direction + "-arrow-width", arrowState.width, "number", direction + " arrow width"),
+                );
+                table.appendChild(
+                    buildTableInput(direction + "-arrow-text", arrowState.text, "text", direction + " arrow text"),
+                );
+
+                var row = document.createElement("tr");
+                var labelCell = document.createElement("td");
+                var selectCell = document.createElement("td");
+                labelCell.innerHTML = direction + " arrow color";
+                var selectElt = buildSelect(direction + "-arrow-color", COLOR_OPTIONS, arrowState.color);
+                selectCell.appendChild(selectElt);
+                row.appendChild(labelCell);
+                row.appendChild(selectCell);
+                table.appendChild(row);
+                
+                container.appendChild(table);
+            }
+        }
+
+        function buildSegmentsFromState(state) {
+            var container = document.getElementById("segment-container");
+            container.innerHTML = "";
+
+            var segmentCountInput = document.createElement("label");
+            segmentCountInput.innerHTML = "Number of Segments: ";
+
+            var segmentCountElt = document.createElement("input");
+            segmentCountElt.id = "segment-count";
+            segmentCountElt.value = state.segmentCount;
+            segmentCountElt.type = "number";
+            segmentCountElt.min = 1;
+            segmentCountElt.onchange = function() { getStateFromDOM(); }
+
+            container.appendChild(segmentCountInput);
+            container.appendChild(segmentCountElt);
+
+            container.appendChild(document.createElement("div"));
+
+            var table = document.createElement("table");
+
+            var stopOptions = [];
+            for (var i = 0; i < state.stations.length; i++) {
+                var station = state.stations[i];
+                stopOptions.push({ name: station, value: i });
+            }
+
+            var styleOptions = [
+                { name: "Shuttle", value: "shuttle" },
+                { name: "Red Line", value: "red" },
+                { name: "Orange Line", value: "orange" },
+                { name: "Green Line", value: "green" },
+                { name: "Blue Line", value: "blue" },
+                { name: "Silver Line", value: "silver" },
+                { name: "Commuter Rail", value: "purple" },
+                { name: "Bus", value: "bus" },
+                { name: "Disabled", value: "disabled" },
+                { name: "Walk", value: "walk" }
+            ];
+
+            for (var i = 0; i < state.segments.length; i++) {
+                var segment = state.segments[i];
+                
+                var row = document.createElement("tr");
+                var fromStop = document.createElement("td");
+                var fromStopID = "segment-" + i.toString() + "-from-stop";
+                var fromStopSelect = buildTableSelect(fromStopID, stopOptions, segment.fromStopIndex);
+                fromStopSelect.onchange = function(event) { updateSegmentStation(state, event); };
+                row.appendChild(fromStopSelect);
+
+                var toStop = document.createElement("td");
+                var toStopID = "segment-" + i.toString() + "-to-stop";
+                var toStopSelect = buildTableSelect(toStopID, stopOptions, segment.toStopIndex);
+                toStopSelect.onchange = function(event) { updateSegmentStation(state, event); };
+                row.appendChild(toStopSelect);
+
+                var style = document.createElement("td");
+                var styleID = "segment-" + i.toString() + "-style";
+                row.appendChild(buildTableSelect(styleID, styleOptions, segment.style));
+                table.appendChild(row);
+            }
+
+            container.appendChild(table);
+        }
+
+        function buildDOMFromState(state) {
+            // Save focus so it can be restored later
+            var activeId = document.activeElement.id;
+            var activePos = document.activeElement.selectionStart;
+
+            // Build UI
+            buildStylesFromState(state);
+            buildStationsFromState(state);
+            buildStationGridFromState(state);
+            buildArrowsFromState(state);
+            buildSegmentsFromState(state);
+
+            // Restore focus
+            var activeElement = document.getElementById(activeId);
+            if (activeElement) {
+                activeElement.focus();
+                try {
+                    activeElement.setSelectionRange(activePos, activePos);
+                } catch (error) {
+                    // Do nothing
+                }
+            }
+
+            // Update diagram
+            var params = extractParamsFromState(state);
+            draw(params);
+        }
+
+        function fillStations() {
+            var direction = state.selected.direction;
+            var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+            var directions = routePattern.directions;
+            var stops = getOrderedStops(state);
+
+            var foundFromStop = false;
+            var foundToStop = false;
+            var includesFirstStop = false;
+            var includesLastStop = false;
+            var leftArrowText;
+            var rightArrowText;
+
+            var stations = [];
+            for (var i = 0; i < stops.length; i++) {
+                var stop = stops[i];
+
+                if (stop.name.toUpperCase() == state.selected.fromStop) {
+                    foundFromStop = true;
+                    leftArrowText = (direction == directions[0]) ? stop.destinations[1] : stop.destinations[0];
+                }
+
+                if (foundFromStop && !foundToStop) {
+                    stations.push(stop.name.toUpperCase());
+
+                    if (i == 0) {
+                        includesFirstStop = true;
+                    }
+
+                    if (i == stops.length - 1) {
+                        includesLastStop = true;
+                    }
+                }
+
+                if (stop.name.toUpperCase() == state.selected.toStop) {
+                    foundToStop = true;
+                    rightArrowText = (direction == directions[0]) ? stop.destinations[0] : stop.destinations[1];
+                }
+            }
+
+            document.getElementById("stations").value = stations.join("\n");
+            document.getElementById("left-arrow-color").value = routePattern.color;
+            document.getElementById("right-arrow-color").value = routePattern.color;
+
+            if (includesFirstStop) {
+                document.getElementById("left-arrow-present").checked = false;
+            } else {
+                document.getElementById("left-arrow-present").checked = true;
+                document.getElementById("left-arrow-text").value = leftArrowText;
+            }
+
+            if (includesLastStop) {
+                document.getElementById("right-arrow-present").checked = false;
+            } else {
+                document.getElementById("right-arrow-present").checked = true;
+                document.getElementById("right-arrow-text").value = rightArrowText;
+            }
+            
+            // Hack to make sure that stations.length - 1 is a valid option
+            var selectElt = document.getElementById("segment-0-to-stop");
+            var newOption = document.createElement("option");
+            newOption.value = stations.length - 1;
+            selectElt.appendChild(newOption);
+
+            document.getElementById("segment-count").value = 1;
+            document.getElementById("segment-0-from-stop").value = 0;
+            document.getElementById("segment-0-to-stop").value = stations.length - 1;
+            document.getElementById("segment-0-style").value = "shuttle";
+
+            // Enable auto width
+            document.getElementById("auto-width").checked = true;
+
+            getStateFromDOM();
+        }
+
+        function updateSegmentStation(state, event) {
+            // If updating a to-stop, also update the next from-stop
+            if (event !== undefined && event.target.id.includes("to-stop")) {
+                var idx = parseInt(event.target.id.split("-")[1]);
+                if (idx < state.segmentCount - 1) {
+                    var nextElt = document.getElementById("segment-" + (idx + 1).toString() + "-from-stop");
+                    nextElt.value = event.target.value;
+                }
+            }
+
+            // If updating a from-stop, also update the previous to-stop
+            if (event !== undefined && event.target.id.includes("from-stop")) {
+                var idx = parseInt(event.target.id.split("-")[1]);
+                if (idx > 0) {
+                    var prevElt = document.getElementById("segment-" + (idx - 1).toString() + "-to-stop");
+                    prevElt.value = event.target.value;
+                }
+            }
+
+            getStateFromDOM();
+        }
+
         function parseColor(color) {
             if (color == "green") { return "#00843D"; }
             if (color == "orange") { return "#ED8B00"; }
             if (color == "red") { return "#DA291C"; }
             if (color == "blue") { return "#003DA5"; }
-            if (color == "purple" || color == "CR") { return "#80276C"; }
+            if (color == "purple") { return "#80276C"; }
             if (color == "silver") { return "#7C878E"; }
             if (color == "bus") { return "#FFC72C"; }
 
             return "black";
         }
 
-        function copy(obj) {
-            return JSON.parse(JSON.stringify(obj));
+        function parseTextColor(color) {
+            if (color == "bus") { return "black" ; }
+            return "white";
         }
 
-        var COLUMNS = ["accessible", "skipped"];
+        function extractParamsFromState(state) {
+            var segments = [];
+            for (var i = 0; i < state.segments.length; i++) {
+                var segment = state.segments[i];
 
-        function updateStationList() {
-            var stations = document.getElementById("stations").value.trim().split("\n");
-            var stationList = document.getElementById("station-list");
-            stationList.innerHTML = "";
+                var newSegment = [];
+                newSegment.fromStopIndex = parseInt(segment.fromStopIndex);
+                newSegment.toStopIndex = parseInt(segment.toStopIndex);
+                newSegment.style = segment.style;
 
-            if (stationState !== null) {
-                var stateOnly = [];
-                var arrayOnly = [];
-
-                // Find station in state which is not in array
-                for (station in stationState) {
-                    if (!stations.includes(station)) {
-                        stateOnly.push(station);
-                    }
-                }
-
-                // Find station in array which is not in state
-                for (var i = 0; i < stations.length; i++) {
-                    if (stationState[stations[i]] === undefined) {
-                        arrayOnly.push(stations[i]);
-                    }
-                }
-
-                // If either stateOnly or arrayOnly has more than one element, something strange
-                // has happened (maybe copy/paste) and we don't know what to do, so reset.
-                if (arrayOnly.length > 1 || stateOnly.length > 1) {
-                    stationState = null;
+                if (segment.style == "shuttle") {
+                    newSegment.color = "black";
+                    newSegment.width = state.style.lineStroke;
+                    newSegment.dasharray = state.style.lineDasharray;
+                } else if (segment.style == "disabled") {
+                    newSegment.color = "#D2D2D2";
+                    newSegment.width = state.style.stationRadius * 2;
+                } else if (segment.style == "walk") {
+                    newSegment.color = "black";
+                    newSegment.width = state.style.lineStroke / 2;
+                    newSegment.dasharray = "20, 20";
+                    newSegment.linecap = "round";
                 } else {
-                    arrayOnly = arrayOnly[0];
-                    stateOnly = stateOnly[0];
+                    newSegment.color = parseColor(segment.style);
+                    newSegment.width = state.style.stationRadius * 2;
+                }
+                segments.push(newSegment);
+            }
 
-                    if ((arrayOnly !== undefined) && (stateOnly !== undefined)) {
-                        // Change
-                        stationState[arrayOnly] = copy(stationState[stateOnly]);
-                        delete stationState[stateOnly];
-                    } else if (arrayOnly !== undefined) {
-                        // Addition
-                        stationState[arrayOnly] = { checked: false };
-                    } else if (stateOnly !== undefined) {
-                        // Deletion
-                        delete stationState[stateOnly];
+            return {
+                width: state.width,
+                stations: state.stations,
+                style: state.style,
+                stationAttributes: state.stationAttributes,
+                arrows: {
+                    autoWidth: state.autoWidth,
+                    left: {
+                        present: state.leftArrow.present,
+                        width: state.leftArrow.width,
+                        text: state.leftArrow.text,
+                        color: parseColor(state.leftArrow.color),
+                        textColor: parseTextColor(state.leftArrow.color)
+                    },
+                    right: {
+                        present: state.rightArrow.present,
+                        width: state.rightArrow.width,
+                        text: state.rightArrow.text,
+                        color: parseColor(state.rightArrow.color),
+                        textColor: parseTextColor(state.rightArrow.color)
                     }
-                }
-            }
-
-            if (stationState === null) {
-                stationState = {};
-                for (var i = 0; i < stations.length; i++) {
-                    stationState[stations[i]] = {};
-                    for (var j = 0; j < COLUMNS.length; j++) {
-                        stationState[stations[i]][COLUMNS[j]] = false;
-                    }
-                }
-            }
-            
-            // header row
-            var rowElement = document.createElement("tr");
-            var cell = document.createElement("td");
-            cell.innerHTML = "station name";
-            rowElement.appendChild(cell);
-            for (var i = 0; i < COLUMNS.length; i++) {
-                var cell = document.createElement("td");
-                cell.innerHTML = COLUMNS[i];
-                rowElement.appendChild(cell);
-            }
-            stationList.appendChild(rowElement);
-
-            // input rows
-            for (var i = 0; i < stations.length; i++) {
-                var rowElement = document.createElement("tr");
-                var nameCell = document.createElement("td");
-                nameCell.innerHTML = stations[i];
-                rowElement.appendChild(nameCell);
-
-                for (var j = 0; j < COLUMNS.length; j++) {
-                    var cell = document.createElement("td");
-                    var checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.id = "station-" + i.toString() + "-" + COLUMNS[j];
-                    checkbox.checked = stationState[stations[i]][COLUMNS[j]];
-                    cell.appendChild(checkbox);
-                    rowElement.appendChild(cell);
-                }
-                
-                stationList.appendChild(rowElement);
-            }
-
-            updateNumLines();
+                },
+                segmentCount: state.segmentCount,
+                segments: segments
+            };
         }
 
-        function updateStationStateValues() {
-            var stations = document.getElementById("stations").value.trim().split("\n");
-            var stationList = document.getElementById("station-list");
-
-            for (var i = 0; i < stations.length; i++) {
-                var stationPrefix = "station-" + i.toString() + "-";
-                for (var j = 0; j < COLUMNS.length; j++) {
-                    var checkbox = document.getElementById(stationPrefix + COLUMNS[j]);
-                    stationState[stations[i]][COLUMNS[j]] = checkbox.checked;
-                }
-            }
-
-            draw();
-        }
-
-        function createStopDropdown(id) {
-            var stations = document.getElementById("stations").value.trim().split("\n");
-            var selectElt = document.createElement("select");
-            selectElt.id = id;
-
-            for (var i = 0; i < stations.length; i++) {
-                var optionElt = document.createElement("option");
-                optionElt.value = i;
-                optionElt.innerHTML = stations[i];
-                selectElt.appendChild(optionElt);
-            }
-
-            return selectElt;
-        }
-
-        function createStyleDropdown(id) {
-            var selectElt = document.createElement("select");
-            selectElt.id = id;
-
-            var options = ["shuttle", "red", "orange", "green", "blue", "CR", "silver", "bus"];
-            for (var i = 0; i < options.length; i++) {
-                var optionElt = document.createElement("option");
-                optionElt.value = options[i];
-                optionElt.innerHTML = options[i];
-                selectElt.appendChild(optionElt);
-            }
-
-            return selectElt;
-        }
-
-        function updateNumLines() {
-            var stations = document.getElementById("stations").value.trim().split("\n");
-            if (lineState === null) {
-                var lineStroke = parseInt(document.getElementById("line-stroke").value);
-                var lineDashArray = document.getElementById("line-dash-array").value;
-
-                lineState = [{fromStop: 0, toStop: stations.length - 1, style: "shuttle", color: "black", width: lineStroke, dasharray: lineDashArray}]
-            }
-
-            var numLines = parseInt(document.getElementById("num-lines").value);
-            var lineTable = document.getElementById("line-list");
-            lineTable.innerHTML = "";
-
-            var LINE_COLUMNS = ["fromStop", "toStop", "style"];
-
-            // header row
-            var rowElement = document.createElement("tr");
-            for (var i = 0; i < LINE_COLUMNS.length; i++) {
-                var cell = document.createElement("td");
-                cell.innerHTML = LINE_COLUMNS[i];
-                rowElement.appendChild(cell);
-            }
-
-            lineTable.appendChild(rowElement);
-
-            // input rows
-            for (var i = 0; i < numLines; i++) {
-                var rowElement = document.createElement("tr");
-                for (var j = 0; j < LINE_COLUMNS.length; j++) {
-                    var cell = document.createElement("td");
-                    if (LINE_COLUMNS[j] == "fromStop" || LINE_COLUMNS[j] == "toStop") {
-                        cell.appendChild(createStopDropdown(i.toString() + "-" + LINE_COLUMNS[j]));
-                    } else if (LINE_COLUMNS[j] == "style") {
-                        cell.appendChild(createStyleDropdown(i.toString() + "-" + LINE_COLUMNS[j]))
-                    }
-                    rowElement.appendChild(cell);
-                }
-
-                lineTable.appendChild(rowElement);
-            }
-
-            if (lineState.length == numLines) {
-                for (var i = 0; i < lineState.length; i++) {
-                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
-                        var id = i.toString() + "-" + LINE_COLUMNS[j];
-                        var elt = document.getElementById(id);
-                        var val = lineState[i][LINE_COLUMNS[j]];
-                        var opt = elt.querySelector('option[value="' + val + '"]');
-                        if (opt !== null) {
-                            opt.selected = true;
-                        }
-                    }
-                }
-            } else if (lineState.length > numLines) {
-                for (var i = 0; i < numLines - 1; i++) {
-                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
-                        var id = i.toString() + "-" + LINE_COLUMNS[j];
-                        var elt = document.getElementById(id);
-                        var val = lineState[i][LINE_COLUMNS[j]];
-                        elt.querySelector('option[value="' + val + '"]').selected = true;
-                    }
-                }
-
-                // Special case last line
-                var i = numLines - 1;
-                var fromStopElt = document.getElementById(i.toString() + "-fromStop");
-                fromStopElt.querySelector('option[value="' + lineState[i].fromStop + '"]').selected = true;
-
-                var toStopElt = document.getElementById(i.toString() + "-toStop");
-                toStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
-
-                var styleElt = document.getElementById(i.toString() + "-style");
-                styleElt.querySelector('option[value="' + lineState[i].style + '"]').selected = true;
-            } else if (lineState.length < numLines) {
-                for (var i = 0; i < lineState.length; i++) {
-                    for (var j = 0; j < LINE_COLUMNS.length; j++) {
-                        var id = i.toString() + "-" + LINE_COLUMNS[j];
-                        var elt = document.getElementById(id);
-                        var val = lineState[i][LINE_COLUMNS[j]];
-                        elt.querySelector('option[value="' + val + '"]').selected = true;
-                    }
-                }
-
-                for (var i = lineState.length; i < numLines; i++) {
-                    var fromStopElt = document.getElementById(i.toString() + "-fromStop");
-                    fromStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
-
-                    var toStopElt = document.getElementById(i.toString() + "-toStop");
-                    toStopElt.querySelector('option[value="' + (stations.length - 1).toString() + '"]').selected = true;
-
-                    var styleElt = document.getElementById(i.toString() + "-style");
-                    styleElt.querySelector('option[value="shuttle"]').selected = true;
-                }
-            }
-
-            updateLineStateValues();
-        }
-
-        function updateLineStateValues(event) {
-            var numLines = parseInt(document.getElementById("num-lines").value);
-
-            // If updating a toStop, also update the next fromStop
-            if (event !== undefined && event.target.id.includes("toStop")) {
-                var idx = parseInt(event.target.id.split("-")[0]);
-                if (idx < numLines - 1) {
-                    var nextElt = document.getElementById((idx + 1).toString() + "-fromStop");
-                    nextElt.value = event.target.value;
-                }
-            }
-
-            // If updating a fromStop, also update the previous toStop
-            if (event !== undefined && event.target.id.includes("fromStop")) {
-                var idx = parseInt(event.target.id.split("-")[0]);
-                if (idx > 0) {
-                    var prevElt = document.getElementById((idx - 1).toString() + "-toStop");
-                    prevElt.value = event.target.value;
-                }
-            }
-
-            
-            var parsedLines = [];
-
-            for (var i = 0; i < numLines; i++) {
-                var fromStop = parseInt(document.getElementById(i.toString() + "-fromStop").value);
-                var toStop = parseInt(document.getElementById(i.toString() + "-toStop").value);
-                var style = document.getElementById(i.toString() + "-style").value;
-
-                if (fromStop < toStop) {
-                    var parsedLine = {};
-                    parsedLine.fromStop = fromStop;
-                    parsedLine.toStop = toStop;
-                    parsedLine.style = style;
-
-                    if (["red", "orange", "green", "blue", "purple", "CR", "silver", "bus"].includes(style)) {
-                        var stationRadius = parseInt(document.getElementById("station-radius").value);
-                        parsedLine.color = parseColor(style);
-                        parsedLine.width = stationRadius * 2;
-                    } else if (style == "shuttle") {
-                        var lineStroke = parseInt(document.getElementById("line-stroke").value);
-                        var lineDashArray = document.getElementById("line-dash-array").value;
-                        parsedLine.color = "black";
-                        parsedLine.width = lineStroke;
-                        parsedLine.dasharray = lineDashArray;
-                    }
-
-                    parsedLines.push(parsedLine);
-                }
-            }
-
-            if (parsedLines.length > 0) {
-                lineState = parsedLines;
-            } else {
-                var lineStroke = parseInt(document.getElementById("line-stroke").value);
-                var lineDashArray = document.getElementById("line-dash-array").value;
-                var stations = document.getElementById("stations").value.trim().split("\n");
-                lineState = [{fromStop: 0, toStop: stations.length - 1, style: "shuttle", color: "black", width: lineStroke, dasharray: lineDashArray}];
-            }
-
-            draw();
-        }
-
-        function draw(setWidths) {
+        function draw(params) {
             // Clear existing diagram
             document.getElementById("drawing").innerHTML = "";
 
-            // Get inputs
-            var padding = parseInt(document.getElementById("padding").value);
-            var width = parseInt(document.getElementById("width").value);
-            var lineExtraSpace = parseInt(document.getElementById("line-extra-space").value);
-
-            var stations = document.getElementById("stations").value.trim().split("\n");
-            // var accessibleStations = document.getElementById("accessible-stations").value.trim().split("\n");
-            // var skippedStations = document.getElementById("skipped-stations").value.trim().split("\n");
-
-            var arrowTextSize = parseInt(document.getElementById("arrow-text-size").value);
-            var leftArrow = document.getElementById("left-arrow-present").checked;
-            var leftArrowWidth = parseInt(document.getElementById("left-arrow-width").value);
-            var leftArrowColor = document.getElementById("left-arrow-color").value;
-            var leftArrowText = document.getElementById("left-arrow-text").value;
-            var leftArrowTextColor = (leftArrowColor == "#FFC72C") ? "black" : "white";
-
-            var rightArrow = document.getElementById("right-arrow-present").checked;
-            var rightArrowWidth = parseInt(document.getElementById("right-arrow-width").value);
-            var rightArrowColor = document.getElementById("right-arrow-color").value;
-            var rightArrowText = document.getElementById("right-arrow-text").value;
-            var rightArrowTextColor = (rightArrowColor == "#FFC72C") ? "black" : "white";
-
-            var lineStroke = parseInt(document.getElementById("line-stroke").value);
-            var lineDashArray = document.getElementById("line-dash-array").value;
-            var stationRadius = parseInt(document.getElementById("station-radius").value);
-            var stationStroke = parseInt(document.getElementById("station-stroke").value);
-            var stationTextSize = parseInt(document.getElementById("station-text-size").value);
-            var RT2 = Math.sqrt(2);
-
             // Create SVG
             var diagram = SVG('drawing')
-                .size(width, 100)
+                .size(params.width, 100)
                 .style({
                     "background-color": "white",
                     "outline": "1px solid black"
@@ -996,20 +1037,20 @@
             var textGroup = container.group();
             var lineGroup = container.group();
             var stationGroup = container.group();
-            if (leftArrow) { var leftArrowGroup = container.group(); }
-            if (rightArrow) { var rightArrowGroup = container.group(); }
+            if (params.arrows.left.present) { var leftArrowGroup = container.group(); }
+            if (params.arrows.right.present) { var rightArrowGroup = container.group(); }
 
             // ISA Symbol from Wikipedia
             var isaSymbol = diagram.symbol();
             isaSymbol.path("M161.9882813,98.1240234 c24.9628906-2.3046875,44.3574219-23.8110352,44.3574219-48.9658203C206.3457031,22.0830078,184.2626953,0,157.1875,0 s-49.1572266,22.0830078-49.1572266,49.1582031c0,8.2568359,2.3037109,16.7055664,6.1445313,23.8105469l17.515625,246.4667969 l180.3964844,0.0488281l73.9912109,173.3652344l97.1445313-38.0976563l-15.0429688-35.8203125l-54.3662109,19.625 l-71.5908203-165.2802734l-167.7294922,1.1269531l-2.3027344-31.2128906l121.4228516,0.0483398v-46.1831055l-126.0546875-0.0493164 L161.9882813,98.1240234z").fill("black");
             isaSymbol.path("M343.4199219,451.5908203 c-30.4472656,60.1875-94.1748047,99.8398438-162.1503906,99.8398438C81.4296875,551.4306641,0,470.0009766,0,370.1611328 c0-70.1005859,42.4853516-135.2436523,105.8818359-164.1210938l4.1025391,53.5375977 c-37.4970703,23.628418-60.6123047,66.262207-60.6123047,110.9506836c0,72.4267578,59.0712891,131.4970703,131.4970703,131.4970703 c66.2617188,0,122.7646484-50.8515625,130.4697266-116.0869141L343.4199219,451.5908203z").fill("black");
             isaSymbol.viewbox(0, 0, 483.2226563, 551.4306641);
-            isaSymbol.size(stationTextSize, stationTextSize);
+            isaSymbol.size(params.style.stationTextSize, params.style.stationTextSize);
 
 
-            if (leftArrow) {
+            if (params.arrows.left.present) {
                 // Text label
-                var leftArrowTextLines = leftArrowText.split("//");
+                var leftArrowTextLines = params.arrows.left.text.split("//");
                 var leftArrowTextElt = leftArrowGroup
                     .text(function(add) {
                         for (var i = 0; i < leftArrowTextLines.length; i++) {
@@ -1017,18 +1058,18 @@
                         }
                     })
                     .stroke("none")
-                    .fill(leftArrowTextColor)
+                    .fill(params.arrows.left.textColor)
                     .font({
                         weight: "bold",
-                        size: arrowTextSize + "px",
+                        size: params.style.arrowTextSize + "px",
                         family: "sans-serif",
                         anchor: "middle"
                     });
             }
 
-            if (rightArrow) {
+            if (params.arrows.right.present) {
                 // Text label
-                var rightArrowTextLines = rightArrowText.split("//");
+                var rightArrowTextLines = params.arrows.right.text.split("//");
                 var rightArrowTextElt = diagram
                     .text(function(add) {
                         for (var i = 0; i < rightArrowTextLines.length; i++) {
@@ -1036,63 +1077,90 @@
                         }
                     })
                     .stroke("none")
-                    .fill(rightArrowTextColor)
+                    .fill(params.arrows.right.textColor)
                     .font({
                         weight: "bold",
-                        size: arrowTextSize + "px",
+                        size: params.style.arrowTextSize + "px",
                         family: "sans-serif",
                         anchor: "middle"
                     })
             }
 
-            if (setWidths) {
+            if (params.arrows.autoWidth) {
                 // Compute new widths
-                if (leftArrow) {
-                    leftArrowWidth = Math.round(leftArrowTextElt.bbox().w + stationRadius * 2);
-                    document.getElementById("left-arrow-width").value = leftArrowWidth;
+                if (params.arrows.left.present) {
+                    params.arrows.left.width = Math.round(leftArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("left-arrow-width").value = params.arrows.left.width;
                 }
 
-                if (rightArrow) {
-                    rightArrowWidth = Math.round(rightArrowTextElt.bbox().w + stationRadius * 2);
-                    document.getElementById("right-arrow-width").value = rightArrowWidth;
+                if (params.arrows.right.present) {
+                    params.arrows.right.width = Math.round(rightArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("right-arrow-width").value = params.arrows.right.width;
                 }
             }
 
             ///////////////////////////////////////////////////////////////////
             // Compute startX, endX, stationDX
             ///////////////////////////////////////////////////////////////////
-            var startX = stationRadius;
-            var endX = width - stationRadius;
-            if (leftArrow) { startX += leftArrowWidth };
-            if (rightArrow) { endX -= rightArrowWidth };
+            var startX = params.style.stationRadius;
+            var endX = params.width - params.style.stationRadius;
+            if (params.arrows.left.present) { startX += params.arrows.left.width };
+            if (params.arrows.right.present) { endX -= params.arrows.right.width };
 
             var stationDX = 0;
-            if (stations.length > 1) {
-                stationDX = (endX - startX) / (stations.length - 1);
+            if (params.stations.length > 1) {
+                stationDX = (endX - startX) / (params.stations.length - 1);
             }
 
             ///////////////////////////////////////////////////////////////////
             // Draw lines
             ///////////////////////////////////////////////////////////////////
-            for (var i = 0; i < lineState.length; i++) {
-                var x1 = startX + stationDX * lineState[i].fromStop;
-                var x2 = startX + stationDX * lineState[i].toStop;
-                var lineStroke = {color: lineState[i].color, width: lineState[i].width}
-                if (lineState[i].dasharray) { lineStroke.dasharray = lineState[i].dasharray };
+            for (var i = 0; i < params.segments.length; i++) {
+                var x1 = startX + stationDX * params.segments[i].fromStopIndex;
+                var x2 = startX + stationDX * params.segments[i].toStopIndex;
+                var lineStroke = {
+                    color: params.segments[i].color,
+                    width: params.segments[i].width
+                };
+
+                if (params.segments[i].dasharray) { 
+                    lineStroke.dasharray = params.segments[i].dasharray;
+                }
+
+                if (params.segments[i].linecap) {
+                    lineStroke.linecap = params.segments[i].linecap;
+                }
+
                 lineGroup.line(x1, 0, x2, 0).stroke(lineStroke)
             }
 
             ///////////////////////////////////////////////////////////////////
             // Draw stations
             ///////////////////////////////////////////////////////////////////
-            for (var i = 0; i < stations.length; i++) {
+            for (var i = 0; i < params.stations.length; i++) {
                 var centerX = startX + i * stationDX;
                 var centerY = 0;
-                var r = stationRadius - stationStroke / 2;
+                var r = params.style.stationRadius - params.style.stationStroke / 2;
 
-                if (stationState[stations[i]].skipped) {
+                if (params.stationAttributes[params.stations[i]].skipped) {
                     // Red Octagon for skipped stop
-                    var side = 2 * r / (1 + RT2);
+                    var currentSegment;
+                    for (var j = 0; j < params.segments.length; j++) {
+                        if (params.segments[j].fromStopIndex < i && params.segments[j].toStopIndex > i) {
+                            currentSegment = params.segments[j];
+                        }
+                    }
+
+                    if (currentSegment !== undefined && !(["shuttle", "walk"].includes(currentSegment.style))) {
+                        // Border
+                        var r2 = params.style.stationRadius + params.style.stationStroke / 4;
+                        var octagonStroke = { color: "white", width: params.style.stationStroke / 2 };
+                    } else {
+                        var r2 = r;
+                        var octagonStroke = { color: "red", width: params.  style.stationStroke };
+                    }
+
+                    var side = 2 * r2 / (1 + RT2);
                     var points = [
                         [(side / 2 * (1 + RT2)), (side / 2)],
                         [(side / 2), (side / 2 * (1 + RT2))],
@@ -1105,58 +1173,58 @@
                     ];
 
                     stationGroup.polygon(points.join(" "))
-                                .move(centerX - r, centerY - r)
+                                .move(centerX - r2, centerY - r2)
                                 .fill("red")
-                                .stroke({color: "red", width: stationStroke});
+                                .stroke(octagonStroke);
 
                     stationGroup.line(-r/2, -r/2, r/2, r/2)
                                 .move(centerX - r/2, centerY - r/2)
-                                .stroke({ color: "white", width: stationRadius / 3});
+                                .stroke({ color: "white", width: params.style.stationRadius / 3 });
 
                     stationGroup.line(-r/2, r/2, r/2, -r/2)
                                 .move(centerX - r/2, centerY - r/2)
-                                .stroke({ color: "white", width: stationRadius / 3});
+                                .stroke({ color: "white", width: params.style.stationRadius / 3 });
                 } else {
                     // Circle for normal stop
-                    for (var j = 0; j < lineState.length; j++) {
-                        if (i > lineState[j].fromStop && i <= lineState[j].toStop) {
-                            var stopStrokeColor = lineState[j].color;
+                    for (var j = 0; j < params.segments.length; j++) {
+                        if (i > params.segments[j].fromStopIndex && i <= params.segments[j].toStopIndex) {
+                            var stopStrokeColor = params.segments[j].color;
 
-                            if ((stopStrokeColor == "black") && (j < lineState.length - 1) && (i == lineState[j].toStop)) {
-                                stopStrokeColor = lineState[j + 1].color;
+                            if ((stopStrokeColor == "black") && (j < params.segments.length - 1) && (i == params.segments[j].toStopIndex)) {
+                                stopStrokeColor = params.segments[j + 1].color;
                             }
                         }
 
-                        if ((i == 0) && (lineState[j].fromStop == 0)) {
-                            stopStrokeColor = lineState[j].color;
+                        if ((i == 0) && (params.segments[j].fromStopIndex == 0)) {
+                            stopStrokeColor = params.segments[j].color;
                         }
                     }
 
                     stationGroup.circle(2*r)
                                 .move(centerX - r, centerY - r)
                                 .fill("white")
-                                .stroke({ color: stopStrokeColor, width: stationStroke});
+                                .stroke({ color: stopStrokeColor, width: params.style.stationStroke});
                 }
 
                 // Station label
                 var stationTextAngle = 315;
                 var text = textGroup
                     .text(function(add) {
-                        add.tspan(stations[i]).newLine();
+                        add.tspan(params.stations[i]).newLine();
                     })
-                    .rotate(stationTextAngle, centerX - stationTextSize / 2, 0)
-                    .move(centerX - stationTextSize / 2, 0)
+                    .rotate(stationTextAngle, centerX - params.style.stationTextSize / 2, 0)
+                    .move(centerX - params.style.stationTextSize / 2, 0)
                     .font({
                         family: "sans-serif",
                         weight: "bold",
-                        size: stationTextSize + "px"
+                        size: params.style.stationTextSize + "px"
                     });
 
                 // Station accessibility label
-                if (stationState[stations[i]].accessible) {
-                    var ISAX = centerX - stationTextSize / 2
-                        + (text.length() + stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
-                    var ISAY = (text.length() + stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
+                if (params.stationAttributes[params.stations[i]].accessible) {
+                    var ISAX = centerX - params.style.stationTextSize / 2
+                        + (text.length() + params.style.stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
+                    var ISAY = (text.length() + params.style.stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
                     textGroup.use(isaSymbol)
                              .rotate(stationTextAngle, ISAX, ISAY)
                              .move(ISAX, ISAY);
@@ -1166,45 +1234,45 @@
             // Used measured element heights to set Y coordinates of groups
             var measuredTextHeight = textGroup.bbox().h;
             var measuredLineHeight = stationGroup.bbox().h;
-            var lineY = measuredTextHeight + measuredLineHeight / 2 + lineExtraSpace;
+            var lineY = measuredTextHeight + measuredLineHeight / 2 + params.style.lineExtraSpace;
 
             lineGroup.move(0, lineY);
             stationGroup.move(0, lineY);
-            textGroup.move(0, measuredTextHeight - stationTextSize);
-            diagram.size(width, measuredTextHeight + measuredLineHeight);
+            textGroup.move(0, measuredTextHeight - params.style.stationTextSize);
+            diagram.size(params.width, measuredTextHeight + measuredLineHeight);
 
             ///////////////////////////////////////////////////////////////////
             // Draw left arrow
             ///////////////////////////////////////////////////////////////////
-            if (leftArrow) {
+            if (params.arrows.left.present) {
                 // Arrow
-                var dy = stationRadius - stationStroke / 2;
+                var dy = params.style.stationRadius - params.style.stationStroke / 2;
                 var points = [
-                    [stationStroke / RT2, lineY],
-                    [stationRadius, lineY + dy],
-                    [leftArrowWidth + stationRadius, lineY + dy],
-                    [leftArrowWidth + stationRadius, lineY - dy],
-                    [stationRadius, (lineY - dy)]
+                    [params.style.stationStroke / RT2, lineY],
+                    [params.style.stationRadius, lineY + dy],
+                    [params.arrows.left.width + params.style.stationRadius, lineY + dy],
+                    [params.arrows.left.width + params.style.stationRadius, lineY - dy],
+                    [params.style.stationRadius, (lineY - dy)]
                 ];
 
 
                 leftArrowGroup.polygon(points.join(" "))
-                              .fill(leftArrowColor)
-                              .stroke({color: leftArrowColor, width: stationStroke});
+                              .fill(params.arrows.left.color)
+                              .stroke({color: params.arrows.left.color, width: params.style.stationStroke});
 
                 // Circle
                 var centerX = startX;
                 var centerY = lineY;
-                var r = stationRadius - stationStroke / 2;  
+                var r = params.style.stationRadius - params.style.stationStroke / 2;  
                 leftArrowGroup.circle(2 * r)
                               .move(centerX - r, centerY - r)
                               .fill("white")
-                              .stroke({ color: leftArrowColor, width: stationStroke});
+                              .stroke({ color: params.arrows.left.color, width: params.style.stationStroke});
 
                 leftArrowGroup.add(leftArrowTextElt);
 
                 // Adjust position based on measured height and width
-                var leftArrowTextX = stationRadius + leftArrowTextElt.bbox().w / 2;
+                var leftArrowTextX = params.style.stationRadius + leftArrowTextElt.bbox().w / 2;
                 var leftArrowTextY = lineY - leftArrowTextElt.bbox().h / 2;
                 leftArrowTextElt.move(leftArrowTextX, leftArrowTextY);
             }
@@ -1212,45 +1280,272 @@
             ///////////////////////////////////////////////////////////////////
             // Draw right arrow
             ///////////////////////////////////////////////////////////////////
-            if (rightArrow) {
+            if (params.arrows.right.present) {
                 // Arrow
-                var dy = stationRadius - stationStroke / 2;
+                var dy = params.style.stationRadius - params.style.stationStroke / 2;
                 var points = [
-                    [width - stationStroke / RT2, lineY],
-                    [width - stationRadius, lineY + dy],
-                    [width - rightArrowWidth - stationRadius, lineY + dy],
-                    [width - rightArrowWidth - stationRadius, lineY - dy],
-                    [width - stationRadius, lineY - dy],
+                    [params.width - params.style.stationStroke / RT2, lineY],
+                    [params.width - params.style.stationRadius, lineY + dy],
+                    [params.width - params.arrows.right.width - params.style.stationRadius, lineY + dy],
+                    [params.width - params.arrows.right.width - params.style.stationRadius, lineY - dy],
+                    [params.width - params.style.stationRadius, lineY - dy],
                 ];
 
                 rightArrowGroup.polygon(points.join(" "))
-                               .fill(rightArrowColor)
-                               .stroke({color: rightArrowColor, width: stationStroke});
+                               .fill(params.arrows.right.color)
+                               .stroke({color: params.arrows.right.color, width: params.style.stationStroke});
 
                 // Circle
                 var centerX = endX;
                 var centerY = lineY;
-                var r = stationRadius - stationStroke / 2;
+                var r = params.style.stationRadius - params.style.stationStroke / 2;
                 rightArrowGroup.circle(2 * r)
                                .move(centerX - r, centerY - r)
                                .fill("white")
-                               .stroke({ color: rightArrowColor, width: stationStroke});
+                               .stroke({ color: params.arrows.right.color, width: params.style.stationStroke});
 
                 rightArrowGroup.add(rightArrowTextElt);
                 
 
                 // Adjust position based on measured height and width
-                var rightArrowTextX = width - stationRadius - rightArrowTextElt.bbox().w / 2;
+                var rightArrowTextX = params.width - params.style.stationRadius - rightArrowTextElt.bbox().w / 2;
                 var rightArrowTextY = lineY - rightArrowTextElt.bbox().h / 2;
                 rightArrowTextElt.move(rightArrowTextX, rightArrowTextY);
             }
 
             // Add padding, including extra padding on RHS if necessary
             var lastTextEndX = textGroup.bbox().x2;
-            var measuredWidth = Math.max(width, lastTextEndX);
-            var measuredHeight = measuredTextHeight + measuredLineHeight + lineExtraSpace;
-            diagram.size(measuredWidth + 2 * padding, measuredHeight + 2 * padding);
-            container.move(padding, padding);
+            var measuredWidth = Math.max(params.width, lastTextEndX);
+            var measuredHeight = measuredTextHeight + measuredLineHeight + params.style.lineExtraSpace;
+            diagram.size(measuredWidth + 2 * params.style.padding, measuredHeight + 2 * params.style.padding);
+            container.move(params.style.padding, params.style.padding);
+        }
+
+        var ROUTE_PATTERNS = {
+            redAshmont: {
+                name: "Red Line (Ashmont)",
+                color: "red",
+                stops: [
+                    {name: "Ashmont", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Shawmut", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Fields Corner", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "Savin Hill", accessible: true, destinations: ["ALEWIFE", "ASHMONT"]},
+                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            redBraintree: {
+                name: "Red Line (Braintree)",
+                color: "red",
+                stops: [
+                    {name: "Braintree", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "Quincy Adams", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "Quincy Center", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "Wollaston", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "North Quincy", accessible: true, destinations: ["ALEWIFE", "BRAINTREE"]},
+                    {name: "JFK/UMass", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Andrew", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Broadway", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "South Station", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Park Street", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Charles/MGH", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Kendall/MIT", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Central", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Harvard", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Porter", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Davis", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]},
+                    {name: "Alewife", accessible: true, destinations: ["ALEWIFE", "ASHMONT / //BRAINTREE"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            mattapan: {
+                name: "Mattapan Line",
+                color: "red",
+                stops: [
+                    {name: "Mattapan", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Capen Street", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Valley Road", accessible: false, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Central Avenue", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Milton", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Butler", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Cedar Grove", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]},
+                    {name: "Ashmont", accessible: true, destinations: ["ASHMONT", "MATTAPAN"]}
+                ],
+                directions: ["Inbound", "Outbound"]
+            },
+            orange: {
+                name: "Orange Line",
+                color: "orange",
+                stops: [
+                    {name: "Forest Hills", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Green Street", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Stony Brook", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Jackson Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Roxbury Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Ruggles", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Massachusetts Avenue", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Back Bay", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Tufts Medical Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Chinatown", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Downtown Crossing", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "State", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Haymarket", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "North Station", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Community College", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Sullivan Square", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Assembly", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Wellington", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Malden Center", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]},
+                    {name: "Oak Grove", accessible: true, destinations: ["OAK GROVE", "FOREST HILLS"]}
+                ],
+                directions: ["Northbound", "Southbound"]
+            },
+            blue: {
+                name: "Blue Line",
+                color: "blue",
+                stops: [
+                    {name: "Bowdoin", accessible: false, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Government Center", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "State", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Aquarium", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Maverick", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Airport", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Wood Island", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Orient Heights", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Suffolk Downs", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Beachmont", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Revere Beach", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]},
+                    {name: "Wonderland", accessible: true, destinations: ["WONDERLAND", "BOWDOIN"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenB: {
+                name: "Green Line (B Branch)",
+                color: "green",
+                stops: [
+                    {name: "Boston College", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "South Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Chestnut Hill Avenue", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Chiswick Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Sutherland Road", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Washington Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Warren Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Allston Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Griggs Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Harvard Avenue", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Packards Corner", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Babcock Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Pleasant Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University West", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University Central", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boston University East", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Blandford Street", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]},
+                    {name: "Park Street", accessible: true, destinations: ["PARK ST//& NORTH", "BOSTON COLLEGE"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenC: {
+                name: "Green Line (C Branch)",
+                color: "green",
+                stops: [
+                    {name: "Cleveland Circle", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Englewood Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Dean Road", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Tappan Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Washington Square", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Fairbanks Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Brandon Hall", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Summit Avenue", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Coolidge Corner", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Saint Paul Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Kent Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Hawes Street", accessible: false, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Saint Marys Street", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "CLEVELAND CIRCLE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "North Station", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenD: {
+                name: "Green Line (D Branch)",
+                color: "green",
+                stops: [
+                    {name: "Riverside", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Woodland", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Waban", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Eliot", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Newton Highlands", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Newton Centre", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Chestnut Hill", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Reservoir", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Beaconsfield", accessible: false, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Brookline Hills", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Brookline Village", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Longwood", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Fenway", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Kenmore", accessible: true, destinations: ["PARK ST// & NORTH", "RIVERSIDE"]},
+                    {name: "Hynes Convention Center", accessible: false, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "KENMORE// & WEST"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            },
+            greenE: {
+                name: "Green Line (E Branch)",
+                color: "green",
+                stops: [
+                    {name: "Heath Street", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Back of the Hill", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Riverway", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Mission Park", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Fenwood Road", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Brigham Circle", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Longwood Medical Area", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Museum of Fine Arts", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Northeastern University", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Symphony", accessible: false, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Prudential", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Copley", accessible: true, destinations: ["PARK ST// & NORTH", "HEATH STREET"]},
+                    {name: "Arlington", accessible: true, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Boylston", accessible: false, destinations: ["PARK ST// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Park Street", accessible: true, destinations: ["GOV CTR// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Government Center", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "Haymarket", accessible: true, destinations: ["NORTH STATION// & NORTH", "COPLEY// & WEST"]},
+                    {name: "North Station", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
+                    {name: "Science Park", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]},
+                    {name: "Lechmere", accessible: true, destinations: ["LECHMERE", "COPLEY// & WEST"]}
+                ],
+                directions: ["Eastbound", "Westbound"]
+            }
         }
     </script>
 </body>
