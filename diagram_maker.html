@@ -16,11 +16,7 @@
         <table id="style-container" class="container" style="border: none;"></table>
         <div id="drawing"></div>
     </div>
-    <div style="display: flex;">
-        <div id="station-container" class="container"></div>
-        <div id="station-attribute-container" class="container"></div>
-        <div id="arrow-container" class="container"></div>
-        <div id="segment-container" class="container"></div>
+    <div id="lines">
     </div>
     
     <canvas id="canvas" style="opacity: 0;"></canvas>
@@ -34,6 +30,7 @@
         });
 
         var RT2 = Math.sqrt(2);
+        var STATION_TEXT_ANGLE = 315; // Degrees
         var COLOR_OPTIONS = [
             { value: "red" , name: "Red Line"},
             { value: "orange" , name: "Orange Line"},
@@ -125,13 +122,13 @@
             return styleState;
         }
 
-        function getSelectedFromDOM() {
+        function getSelectedFromDOM(prefix) {
             var selectedState = {};
 
-            selectedState.routePattern = document.getElementById("route-pattern").value;
-            selectedState.direction = document.getElementById("route-direction").value;
-            selectedState.fromStop = document.getElementById("station-from-stop").value;
-            selectedState.toStop = document.getElementById("station-to-stop").value;
+            selectedState.routePattern = document.getElementById(prefix + "-route-pattern").value;
+            selectedState.direction = document.getElementById(prefix + "-route-direction").value;
+            selectedState.fromStop = document.getElementById(prefix + "-station-from-stop").value;
+            selectedState.toStop = document.getElementById(prefix + "-station-to-stop").value;
 
             if (selectedState.routePattern == "null") { selectedState.routePattern = null; }
             if (selectedState.direction == "null") { selectedState.direction = null; }
@@ -186,9 +183,9 @@
             return selectedState;
         }
 
-        function getStationsFromDOM() {
+        function getStationsFromDOM(prefix) {
             var stations = [];
-            var stationsText = document.getElementById("stations").value;
+            var stationsText = document.getElementById(prefix + "-stations").value;
             var stationLines = stationsText.trim().split("\n");
 
             for (var i = 0; i < stationLines.length; i++) {
@@ -201,129 +198,129 @@
             return stations;
         }
 
-        function updateStationAttributes() {
+        function updateStationAttributes(prefix) {
             // Station attributes -- update keys
             // Find stations which are in attributes but not stations array
             var attributesOnly = [];
-            for (var station in state.stationAttributes) {
-                if (!state.stations.includes(station)) {
+            for (var station in state[prefix].stationAttributes) {
+                if (!state[prefix].stations.includes(station)) {
                     attributesOnly.push(station);
                 }
             }
 
             // Find stations which are in station array but not attributes
             var arrayOnly = [];
-            for (var i = 0; i < state.stations.length; i++) {
-                var station = state.stations[i];
-                if (state.stationAttributes[station] === undefined) {
+            for (var i = 0; i < state[prefix].stations.length; i++) {
+                var station = state[prefix].stations[i];
+                if (state[prefix].stationAttributes[station] === undefined) {
                     arrayOnly.push(station);
                 }
             }
 
             if (attributesOnly.length > 1 || arrayOnly.length > 1) {
                 // If there's more than one change, we don't know what to do, so revert to default values
-                state.stationAttributes = {};
+                state[prefix].stationAttributes = {};
             } else {
                 attributesOnly = attributesOnly[0];
                 arrayOnly = arrayOnly[0];
 
                 if ((arrayOnly !== undefined) && (attributesOnly !== undefined)) {
                     // Change
-                    state.stationAttributes[arrayOnly] = copy(state.stationAttributes[attributesOnly]);
-                    delete state.stationAttributes[attributesOnly];
+                    state[prefix].stationAttributes[arrayOnly] = copy(state[prefix].stationAttributes[attributesOnly]);
+                    delete state[prefix].stationAttributes[attributesOnly];
                 } else if (arrayOnly !== undefined) {
                     // Addition
-                    state.stationAttributes[arrayOnly] = {};
+                    state[prefix].stationAttributes[arrayOnly] = {};
                     for (var i = 0; i < STATION_ATTRIBUTES.length; i++) {
-                        state.stationAttributes[arrayOnly][STATION_ATTRIBUTES[i]] = false;
+                        state[prefix].stationAttributes[arrayOnly][STATION_ATTRIBUTES[i]] = false;
                     }
                 } else if (attributesOnly !== undefined) {
                     // Deletion
-                    delete state.stationAttributes[attributesOnly];
+                    delete state[prefix].stationAttributes[attributesOnly];
                 }
             }
 
-            if (Object.entries(state.stationAttributes) == 0) {
+            if (Object.entries(state[prefix].stationAttributes) == 0) {
                 // Fill default station attributes
-                for (var i = 0; i < state.stations.length; i++) {
-                    state.stationAttributes[state.stations[i]] = {};
+                for (var i = 0; i < state[prefix].stations.length; i++) {
+                    state[prefix].stationAttributes[state[prefix].stations[i]] = {};
                     for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
-                        state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]] = false;
+                        state[prefix].stationAttributes[state[prefix].stations[i]][STATION_ATTRIBUTES[j]] = false;
                     }
                 }
             } else {
                 // Station attributes -- values
-                for (var i = 0; i < state.stations.length; i++) {
-                    var stationPrefix = "station-" + i.toString() + "-";
+                for (var i = 0; i < state[prefix].stations.length; i++) {
+                    var stationPrefix = prefix + "-station-" + i.toString() + "-";
                     for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
                         var checkbox = document.getElementById(stationPrefix + STATION_ATTRIBUTES[j]);
                         if (checkbox !== null) {
-                            state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]] = checkbox.checked;
+                            state[prefix].stationAttributes[state[prefix].stations[i]][STATION_ATTRIBUTES[j]] = checkbox.checked;
                         }
                     }
                 }
             }
         }
 
-        function getArrowFromDOM(direction) {
+        function getArrowFromDOM(prefix, direction) {
             return {
-                present: document.getElementById(direction + "-arrow-present").checked,
-                width: parseInt(document.getElementById(direction + "-arrow-width").value),
-                text: document.getElementById(direction + "-arrow-text").value,
-                color: document.getElementById(direction + "-arrow-color").value
+                present: document.getElementById(prefix + "-" + direction + "-arrow-present").checked,
+                width: parseInt(document.getElementById(prefix + "-" + direction + "-arrow-width").value),
+                text: document.getElementById(prefix + "-" + direction + "-arrow-text").value,
+                color: document.getElementById(prefix + "-" + direction + "-arrow-color").value
             };
         }
 
-        function getSegmentsFromDOM() {
-            if (state.segments.length == state.segmentCount) {
+        function getSegmentsFromDOM(prefix) {
+            if (state[prefix].segments.length == state[prefix].segmentCount) {
                 var newSegments = [];
-                for (var i = 0; i < state.segments.length; i++) {
-                    var segment = state.segments[i];
+                for (var i = 0; i < state[prefix].segments.length; i++) {
+                    var segment = state[prefix].segments[i];
 
                     newSegments.push({
-                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
-                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
-                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                        fromStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById(prefix + "-segment-" + i.toString() + "-style").value
                     });
                 }
 
                 return newSegments;
-            } else if (state.segments.length > state.segmentCount) {
+            } else if (state[prefix].segments.length > state[prefix].segmentCount) {
                 var newSegments = [];
-                for (var i = 0; i < state.segmentCount - 1; i++) {
-                    var segment = state.segmentCount[i];
+                for (var i = 0; i < state[prefix].segmentCount - 1; i++) {
+                    var segment = state[prefix].segmentCount[i];
                     newSegments.push({
-                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
-                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
-                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                        fromStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById(prefix + "-segment-" + i.toString() + "-style").value
                     });
                 }
 
                 // Special case last line
                 newSegments.push({
-                    fromStopIndex: state.segments[state.segmentCount - 1].fromStopIndex,
-                    toStopIndex: state.stations.length - 1,
-                    style: state.segments[state.segmentCount - 1].style,
+                    fromStopIndex: state[prefix].segments[state[prefix].segmentCount - 1].fromStopIndex,
+                    toStopIndex: state[prefix].stations.length - 1,
+                    style: state[prefix].segments[state[prefix].segmentCount - 1].style,
                 });
 
                 return newSegments;
-            } else if (state.segments.length < state.segmentCount) {
+            } else if (state[prefix].segments.length < state[prefix].segmentCount) {
                 var newSegments = [];
-                for (var i = 0; i < state.segments.length; i++) {
-                    var segment = state.segments[i];
+                for (var i = 0; i < state[prefix].segments.length; i++) {
+                    var segment = state[prefix].segments[i];
 
                     newSegments.push({
-                        fromStopIndex: document.getElementById("segment-" + i.toString() + "-from-stop").value,
-                        toStopIndex: document.getElementById("segment-" + i.toString() + "-to-stop").value,
-                        style: document.getElementById("segment-" + i.toString() + "-style").value
+                        fromStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-from-stop").value,
+                        toStopIndex: document.getElementById(prefix + "-segment-" + i.toString() + "-to-stop").value,
+                        style: document.getElementById(prefix + "-segment-" + i.toString() + "-style").value
                     });
                 }
 
                 // Additional lines
-                for (var i = state.segments.length; i < state.segmentCount; i++) {
+                for (var i = state[prefix].segments.length; i < state[prefix].segmentCount; i++) {
                     newSegments.push({
-                        fromStopIndex: state.stations.length - 1,
-                        toStopIndex: state.stations.length - 1,
+                        fromStopIndex: state[prefix].stations.length - 1,
+                        toStopIndex: state[prefix].stations.length - 1,
                         style: "shuttle"
                     });
                 }
@@ -333,35 +330,56 @@
         }
 
         function getStateFromDOM() {
+            state.secondLinePresent = document.getElementById("second-line-present").checked;
             state.width = parseInt(document.getElementById("width").value);
             state.downloadWidth = parseInt(document.getElementById("download-width").value);
+            state.autoWidth = document.getElementById("auto-width").checked;
             state.style = getStyleFromDOM();
-            state.selected = getSelectedFromDOM();
+
+            state.upper.selected = getSelectedFromDOM("upper");
             
             // Stations
-            state.stationsText = document.getElementById("stations").value;
-            state.stations = getStationsFromDOM();
-            updateStationAttributes();
+            state.upper.stationsText = document.getElementById("upper-stations").value;
+            state.upper.stations = getStationsFromDOM("upper");
+            updateStationAttributes("upper");
 
             // Arrows
-            state.autoWidth = document.getElementById("auto-width").checked;
-            state.leftArrow = getArrowFromDOM("left");
-            state.rightArrow = getArrowFromDOM("right");
+            state.upper.leftArrow = getArrowFromDOM("upper", "left");
+            state.upper.rightArrow = getArrowFromDOM("upper", "right");
 
             // Segments
-            state.segmentCount = parseInt(document.getElementById("segment-count").value);
-            state.segments = getSegmentsFromDOM();
+            state.upper.segmentCount = parseInt(document.getElementById("upper-segment-count").value);
+            state.upper.segments = getSegmentsFromDOM("upper");
+
+            if (state.secondLinePresent) {
+                // If we've just checked the box to add a second line, use a default state
+                var testElt = document.getElementById("lower-stations");
+                if (testElt === null) {
+                    state.lower = getDefaultLine();
+                } else {
+                    state.lower.selected = getSelectedFromDOM("lower");
+                    
+                    // Stations
+                    state.lower.stationsText = document.getElementById("lower-stations").value;
+                    state.lower.stations = getStationsFromDOM("lower");
+                    updateStationAttributes("lower");
+
+                    // Arrows
+                    state.lower.leftArrow = getArrowFromDOM("lower", "left");
+                    state.lower.rightArrow = getArrowFromDOM("lower", "right");
+
+                    // Segments
+                    state.lower.segmentCount = parseInt(document.getElementById("lower-segment-count").value);
+                    state.lower.segments = getSegmentsFromDOM("lower");
+                }
+            } else {
+                state.lower = {};
+            }
 
             buildDOMFromState(state);
         }
 
-        function getDefaultState() {
-            var defaultStyle = {};
-            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
-                var style = STYLE_ATTRIBUTES[i];
-                defaultStyle[style.attribute] = style.default;
-            }
-
+        function getDefaultLine() {
             var defaultSelected = {
                 routePattern: null,
                 direction: null,
@@ -381,18 +399,18 @@
                 "FENWAY",
                 "KENMORE"
             ];
-            
+
             var stationAttributes = {
-                "NEWTON HIGHLANDS": {accessible: false, skipped: false},
-                "NEWTON CENTRE": {accessible: true, skipped: false},
-                "CHESTNUT HILL": {accessible: false, skipped: false},
-                "RESERVOIR": {accessible: true, skipped: false},
-                "BEACONSFIELD": {accessible: false, skipped: true},
-                "BROOKLINE HILLS": {accessible: true, skipped: false},
-                "BROOKLINE VILLAGE": {accessible: true, skipped: false},
-                "LONGWOOD": {accessible: true, skipped: false},
-                "FENWAY": {accessible: true, skipped: false},
-                "KENMORE": {accessible: true, skipped: false}
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
+                "NEWTON CENTRE": { accessible: true, skipped: false },
+                "CHESTNUT HILL": { accessible: false, skipped: false },
+                "RESERVOIR": { accessible: true, skipped: false },
+                "BEACONSFIELD": { accessible: false, skipped: true },
+                "BROOKLINE HILLS": { accessible: true, skipped: false },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
+                "LONGWOOD": { accessible: true, skipped: false },
+                "FENWAY": { accessible: true, skipped: false },
+                "KENMORE": { accessible: true, skipped: false }
             };
 
             var leftArrow = {
@@ -409,34 +427,42 @@
                 color: "green"
             }
 
-            var segments = [{
-                fromStopIndex: 0,
-                toStopIndex: stations.length - 1,
-                style: "shuttle"
-            }];
-
             return {
-                width: 1000,
-                downloadWidth: 2600,
-                style: defaultStyle,
                 selected: defaultSelected,
                 stationsText: stations.join("\n"),
                 stations: stations,
-                stationAttributes: stationAttributes,
+                stationAttributes: copy(stationAttributes),
                 leftArrow: leftArrow,
                 rightArrow: rightArrow,
-                autoWidth: true,
                 segmentCount: 1,
-                segments: segments
+                segments: [{ fromStopIndex: 0, toStopIndex: stations.length - 1, style: "shuttle" }]
             };
         }
 
-        function getOrderedStops(state) {
-            var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+        function getDefaultState() {
+            var defaultStyle = {};
+            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
+                var style = STYLE_ATTRIBUTES[i];
+                defaultStyle[style.attribute] = style.default;
+            }
+
+            return {
+                secondLinePresent: false,
+                width: 1000,
+                downloadWidth: 2600,
+                autoWidth: true,
+                style: defaultStyle,
+                upper: getDefaultLine(),
+                lower: {}
+            };
+        }
+
+        function getOrderedStops(state, prefix) {
+            var routePattern = ROUTE_PATTERNS[state[prefix].selected.routePattern];
             var directions = routePattern.directions;
             var stops = routePattern.stops.slice(0);
 
-            if (state.selected.direction == directions[1]) {
+            if (state[prefix].selected.direction == directions[1]) {
                 stops.reverse();
             }
 
@@ -557,12 +583,15 @@
                 );
             }
 
+            table.appendChild(buildTableInput("auto-width", state.autoWidth, "checkbox", "Set widths automatically?"));
+            table.appendChild(buildTableInput("second-line-present", state.secondLinePresent, "checkbox", "Add second line (experimental)"));
+
             container.appendChild(table);
         }
 
-        function buildStationsFromState(state) {
+        function buildStationsFromState(state, prefix) {
             // Stations
-            var stationContainer = document.getElementById("station-container");
+            var stationContainer = document.getElementById(prefix + "-station-container");
             stationContainer.innerHTML = "";
 
             // Route pattern picker
@@ -574,17 +603,17 @@
                 });
             }
             var routePatternSelect = buildSelect(
-                "route-pattern",
+                prefix + "-route-pattern",
                 routePatternOptions,
-                state.selected.routePattern,
+                state[prefix].selected.routePattern,
                 "-- route pattern --"
             );
             stationContainer.appendChild(routePatternSelect);
 
             // Direction picker
             var directionOptions = [];
-            if (state.selected.routePattern !== null) {
-                var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+            if (state[prefix].selected.routePattern !== null) {
+                var routePattern = ROUTE_PATTERNS[state[prefix].selected.routePattern];
                 for (var i = 0; i < routePattern.directions.length; i++) {
                     directionOptions.push({
                         name: routePattern.directions[i],
@@ -593,17 +622,17 @@
                 }
             }
             var directionSelect = buildSelect(
-                "route-direction",
+                prefix + "-route-direction",
                 directionOptions,
-                state.selected.direction,
+                state[prefix].selected.direction,
                 "-- direction --"
             );
             stationContainer.appendChild(directionSelect);
 
             // From stop picker
             var fromStopOptions = [];
-            if (state.selected.direction !== null) {
-                var stops = getOrderedStops(state);
+            if (state[prefix].selected.direction !== null) {
+                var stops = getOrderedStops(state, prefix);
                 for (var i = 0; i < stops.length; i++) {
                     var stop = stops[i];
                     fromStopOptions.push({
@@ -613,17 +642,17 @@
                 }
             }
             var fromStopSelect = buildSelect(
-                "station-from-stop",
+                prefix + "-station-from-stop",
                 fromStopOptions,
-                state.selected.fromStop,
+                state[prefix].selected.fromStop,
                 "-- from stop --"
             );
             stationContainer.appendChild(fromStopSelect);
 
             // To stop picker
             var toStopOptions = [];
-            if (state.selected.direction !== null) {
-                var stops = getOrderedStops(state);
+            if (state[prefix].selected.direction !== null) {
+                var stops = getOrderedStops(state, prefix);
                 for (var i = 0; i < stops.length; i++) {
                     var stop = stops[i];
                     toStopOptions.push({
@@ -633,9 +662,9 @@
                 }
             }
             var toStopSelect = buildSelect(
-                "station-to-stop",
+                prefix + "-station-to-stop",
                 toStopOptions,
-                state.selected.toStop,
+                state[prefix].selected.toStop,
                 "-- to stop --"
             );
             stationContainer.appendChild(toStopSelect);
@@ -644,7 +673,7 @@
             var fillStationsButton = document.createElement("input");
             fillStationsButton.type = "submit";
             fillStationsButton.value = "Fill Stations";
-            fillStationsButton.onclick = function() { fillStations(); }
+            fillStationsButton.onclick = function() { fillStations(prefix); }
             stationContainer.appendChild(fillStationsButton);
 
 
@@ -653,16 +682,16 @@
 
             // Stations Textarea
             var stationsTextarea = document.createElement("textarea");
-            stationsTextarea.id = "stations";
+            stationsTextarea.id = prefix + "-stations";
             stationsTextarea.cols = 24;
             stationsTextarea.rows = 12;
             stationsTextarea.onkeyup = function () { getStateFromDOM(); }
-            stationsTextarea.value = state.stationsText;
+            stationsTextarea.value = state[prefix].stationsText;
             stationContainer.appendChild(stationsTextarea);
         }
 
-        function buildStationGridFromState(state) {
-            var container = document.getElementById("station-attribute-container");
+        function buildStationGridFromState(state, prefix) {
+            var container = document.getElementById(prefix + "-station-attribute-container");
             container.innerHTML = "";
             var table = document.createElement("table");
 
@@ -679,18 +708,18 @@
             table.appendChild(rowElement);
 
             // input rows
-            for (var i = 0; i < state.stations.length; i++) {
+            for (var i = 0; i < state[prefix].stations.length; i++) {
                 var rowElement = document.createElement("tr");
                 var nameCell = document.createElement("td");
-                nameCell.innerHTML = state.stations[i];
+                nameCell.innerHTML = state[prefix].stations[i];
                 rowElement.appendChild(nameCell);
 
                 for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
                     var cell = document.createElement("td");
                     var checkbox = document.createElement("input");
                     checkbox.type = "checkbox";
-                    checkbox.id = "station-" + i.toString() + "-" + STATION_ATTRIBUTES[j];
-                    checkbox.checked = state.stationAttributes[state.stations[i]][STATION_ATTRIBUTES[j]];
+                    checkbox.id = prefix + "-station-" + i.toString() + "-" + STATION_ATTRIBUTES[j];
+                    checkbox.checked = state[prefix].stationAttributes[state[prefix].stations[i]][STATION_ATTRIBUTES[j]];
                     checkbox.onchange = function() { getStateFromDOM(); }
                     cell.appendChild(checkbox);
                     rowElement.appendChild(cell);
@@ -701,51 +730,36 @@
             container.appendChild(table);
         }
 
-        function buildArrowsFromState(state) {
-            var container = document.getElementById("arrow-container");
+        function buildArrowsFromState(state, prefix) {
+            var container = document.getElementById(prefix + "-arrow-container");
             container.innerHTML = "";
 
             var table = document.createElement("table");
-
-            // Checkbox to set arrow widths automatically
-            var row = document.createElement("tr");
-            var autoWidthLabel = document.createElement("td");
-            autoWidthLabel.innerHTML = "set widths automatically?";
-            var autoWidthCell = document.createElement("td");
-            var autoWidthCheckbox = document.createElement("input");
-            autoWidthCheckbox.id = "auto-width";
-            autoWidthCheckbox.type = "checkbox";
-            autoWidthCheckbox.checked = state.autoWidth;
-            autoWidthCheckbox.onchange = function() { getStateFromDOM(); }
-            autoWidthCell.appendChild(autoWidthCheckbox);
-            row.appendChild(autoWidthLabel);
-            row.appendChild(autoWidthCell);
-            table.appendChild(row);
 
             for (var i in ["left", "right"]) {
                 var direction = ["left", "right"][i];
                 var arrowState;
                 if (direction == "left") {
-                    arrowState = state.leftArrow;
+                    arrowState = state[prefix].leftArrow;
                 } else {
-                    arrowState = state.rightArrow;
+                    arrowState = state[prefix].rightArrow;
                 }
 
                 table.appendChild(
-                    buildTableInput(direction + "-arrow-present", arrowState.present, "checkbox", direction + " arrow present?"),
+                    buildTableInput(prefix + "-" + direction + "-arrow-present", arrowState.present, "checkbox", direction + " arrow present?"),
                 );
                 table.appendChild(
-                    buildTableInput(direction + "-arrow-width", arrowState.width, "number", direction + " arrow width"),
+                    buildTableInput(prefix + "-" + direction + "-arrow-width", arrowState.width, "number", direction + " arrow width"),
                 );
                 table.appendChild(
-                    buildTableInput(direction + "-arrow-text", arrowState.text, "text", direction + " arrow text"),
+                    buildTableInput(prefix + "-" + direction + "-arrow-text", arrowState.text, "text", direction + " arrow text"),
                 );
 
                 var row = document.createElement("tr");
                 var labelCell = document.createElement("td");
                 var selectCell = document.createElement("td");
                 labelCell.innerHTML = direction + " arrow color";
-                var selectElt = buildSelect(direction + "-arrow-color", COLOR_OPTIONS, arrowState.color);
+                var selectElt = buildSelect(prefix + "-" + direction + "-arrow-color", COLOR_OPTIONS, arrowState.color);
                 selectCell.appendChild(selectElt);
                 row.appendChild(labelCell);
                 row.appendChild(selectCell);
@@ -755,16 +769,16 @@
             }
         }
 
-        function buildSegmentsFromState(state) {
-            var container = document.getElementById("segment-container");
+        function buildSegmentsFromState(state, prefix) {
+            var container = document.getElementById(prefix + "-segment-container");
             container.innerHTML = "";
 
             var segmentCountInput = document.createElement("label");
             segmentCountInput.innerHTML = "Number of Segments: ";
 
             var segmentCountElt = document.createElement("input");
-            segmentCountElt.id = "segment-count";
-            segmentCountElt.value = state.segmentCount;
+            segmentCountElt.id = prefix + "-segment-count";
+            segmentCountElt.value = state[prefix].segmentCount;
             segmentCountElt.type = "number";
             segmentCountElt.min = 1;
             segmentCountElt.onchange = function() { getStateFromDOM(); }
@@ -777,8 +791,8 @@
             var table = document.createElement("table");
 
             var stopOptions = [];
-            for (var i = 0; i < state.stations.length; i++) {
-                var station = state.stations[i];
+            for (var i = 0; i < state[prefix].stations.length; i++) {
+                var station = state[prefix].stations[i];
                 stopOptions.push({ name: station, value: i });
             }
 
@@ -795,29 +809,66 @@
                 { name: "Walk", value: "walk" }
             ];
 
-            for (var i = 0; i < state.segments.length; i++) {
-                var segment = state.segments[i];
+            for (var i = 0; i < state[prefix].segments.length; i++) {
+                var segment = state[prefix].segments[i];
                 
                 var row = document.createElement("tr");
                 var fromStop = document.createElement("td");
-                var fromStopID = "segment-" + i.toString() + "-from-stop";
+                var fromStopID = prefix + "-segment-" + i.toString() + "-from-stop";
                 var fromStopSelect = buildTableSelect(fromStopID, stopOptions, segment.fromStopIndex);
                 fromStopSelect.onchange = function(event) { updateSegmentStation(state, event); };
                 row.appendChild(fromStopSelect);
 
                 var toStop = document.createElement("td");
-                var toStopID = "segment-" + i.toString() + "-to-stop";
+                var toStopID = prefix + "-segment-" + i.toString() + "-to-stop";
                 var toStopSelect = buildTableSelect(toStopID, stopOptions, segment.toStopIndex);
                 toStopSelect.onchange = function(event) { updateSegmentStation(state, event); };
                 row.appendChild(toStopSelect);
 
                 var style = document.createElement("td");
-                var styleID = "segment-" + i.toString() + "-style";
+                var styleID = prefix + "-segment-" + i.toString() + "-style";
                 row.appendChild(buildTableSelect(styleID, styleOptions, segment.style));
                 table.appendChild(row);
             }
 
             container.appendChild(table);
+        }
+
+        function buildContainersFromState(state) {
+            var linesContainer = document.getElementById("lines");
+            linesContainer.innerHTML = "";
+
+            var upperLineContainer = document.createElement("div");
+            upperLineContainer.style = "display: flex;";
+
+            var containerNames = ["station", "station-attribute", "arrow", "segment"];
+            for (var i = 0; i < containerNames.length; i++) {
+                var name = containerNames[i];
+
+                var containerElt = document.createElement("div");
+                containerElt.id = "upper-" + name + "-container";
+                containerElt.className = "container";
+                upperLineContainer.appendChild(containerElt);
+            }
+
+            linesContainer.appendChild(upperLineContainer);
+
+            if (state.secondLinePresent) {
+                var lowerLineContainer = document.createElement("div");
+                lowerLineContainer.style = "display: flex;";
+
+                var containerNames = ["station", "station-attribute", "arrow", "segment"];
+                for (var i = 0; i < containerNames.length; i++) {
+                    var name = containerNames[i];
+
+                    var containerElt = document.createElement("div");
+                    containerElt.id = "lower-" + name + "-container";
+                    containerElt.className = "container";
+                    lowerLineContainer.appendChild(containerElt);
+                }
+
+                linesContainer.appendChild(lowerLineContainer);
+            }
         }
 
         function buildDOMFromState(state) {
@@ -826,11 +877,21 @@
             var activePos = document.activeElement.selectionStart;
 
             // Build UI
+            buildContainersFromState(state);
             buildStylesFromState(state);
-            buildStationsFromState(state);
-            buildStationGridFromState(state);
-            buildArrowsFromState(state);
-            buildSegmentsFromState(state);
+            
+
+            buildStationsFromState(state, "upper");
+            buildStationGridFromState(state, "upper");
+            buildArrowsFromState(state, "upper");
+            buildSegmentsFromState(state, "upper");
+
+            if (state.secondLinePresent) {
+                buildStationsFromState(state, "lower");
+                buildStationGridFromState(state, "lower");
+                buildArrowsFromState(state, "lower");
+                buildSegmentsFromState(state, "lower");                
+            }
 
             // Restore focus
             var activeElement = document.getElementById(activeId);
@@ -848,11 +909,11 @@
             draw(params);
         }
 
-        function fillStations() {
-            var direction = state.selected.direction;
-            var routePattern = ROUTE_PATTERNS[state.selected.routePattern];
+        function fillStations(prefix) {
+            var direction = state[prefix].selected.direction;
+            var routePattern = ROUTE_PATTERNS[state[prefix].selected.routePattern];
             var directions = routePattern.directions;
-            var stops = getOrderedStops(state);
+            var stops = getOrderedStops(state, prefix);
 
             var foundFromStop = false;
             var foundToStop = false;
@@ -865,7 +926,7 @@
             for (var i = 0; i < stops.length; i++) {
                 var stop = stops[i];
 
-                if (stop.name.toUpperCase() == state.selected.fromStop) {
+                if (stop.name.toUpperCase() == state[prefix].selected.fromStop) {
                     foundFromStop = true;
                     leftArrowText = (direction == directions[0]) ? stop.destinations[1] : stop.destinations[0];
                 }
@@ -882,40 +943,40 @@
                     }
                 }
 
-                if (stop.name.toUpperCase() == state.selected.toStop) {
+                if (stop.name.toUpperCase() == state[prefix].selected.toStop) {
                     foundToStop = true;
                     rightArrowText = (direction == directions[0]) ? stop.destinations[0] : stop.destinations[1];
                 }
             }
 
-            document.getElementById("stations").value = stations.join("\n");
-            document.getElementById("left-arrow-color").value = routePattern.color;
-            document.getElementById("right-arrow-color").value = routePattern.color;
+            document.getElementById(prefix + "-stations").value = stations.join("\n");
+            document.getElementById(prefix + "-left-arrow-color").value = routePattern.color;
+            document.getElementById(prefix + "-right-arrow-color").value = routePattern.color;
 
             if (includesFirstStop) {
-                document.getElementById("left-arrow-present").checked = false;
+                document.getElementById(prefix + "-left-arrow-present").checked = false;
             } else {
-                document.getElementById("left-arrow-present").checked = true;
-                document.getElementById("left-arrow-text").value = leftArrowText;
+                document.getElementById(prefix + "-left-arrow-present").checked = true;
+                document.getElementById(prefix + "-left-arrow-text").value = leftArrowText;
             }
 
             if (includesLastStop) {
-                document.getElementById("right-arrow-present").checked = false;
+                document.getElementById(prefix + "-right-arrow-present").checked = false;
             } else {
-                document.getElementById("right-arrow-present").checked = true;
-                document.getElementById("right-arrow-text").value = rightArrowText;
+                document.getElementById(prefix + "-right-arrow-present").checked = true;
+                document.getElementById(prefix + "-right-arrow-text").value = rightArrowText;
             }
             
             // Hack to make sure that stations.length - 1 is a valid option
-            var selectElt = document.getElementById("segment-0-to-stop");
+            var selectElt = document.getElementById(prefix + "-segment-0-to-stop");
             var newOption = document.createElement("option");
             newOption.value = stations.length - 1;
             selectElt.appendChild(newOption);
 
-            document.getElementById("segment-count").value = 1;
-            document.getElementById("segment-0-from-stop").value = 0;
-            document.getElementById("segment-0-to-stop").value = stations.length - 1;
-            document.getElementById("segment-0-style").value = "shuttle";
+            document.getElementById(prefix + "-segment-count").value = 1;
+            document.getElementById(prefix + "-segment-0-from-stop").value = 0;
+            document.getElementById(prefix + "-segment-0-to-stop").value = stations.length - 1;
+            document.getElementById(prefix + "-segment-0-style").value = "shuttle";
 
             // Enable auto width
             document.getElementById("auto-width").checked = true;
@@ -926,18 +987,20 @@
         function updateSegmentStation(state, event) {
             // If updating a to-stop, also update the next from-stop
             if (event !== undefined && event.target.id.includes("to-stop")) {
-                var idx = parseInt(event.target.id.split("-")[1]);
-                if (idx < state.segmentCount - 1) {
-                    var nextElt = document.getElementById("segment-" + (idx + 1).toString() + "-from-stop");
+                var prefix = event.target.id.split("-")[0];
+                var idx = parseInt(event.target.id.split("-")[2]);
+                if (idx < state[prefix].segmentCount - 1) {
+                    var nextElt = document.getElementById(prefix + "-segment-" + (idx + 1).toString() + "-from-stop");
                     nextElt.value = event.target.value;
                 }
             }
 
             // If updating a from-stop, also update the previous to-stop
             if (event !== undefined && event.target.id.includes("from-stop")) {
-                var idx = parseInt(event.target.id.split("-")[1]);
+                var prefix = event.target.id.split("-")[0];
+                var idx = parseInt(event.target.id.split("-")[2]);
                 if (idx > 0) {
-                    var prevElt = document.getElementById("segment-" + (idx - 1).toString() + "-to-stop");
+                    var prevElt = document.getElementById(prefix + "-segment-" + (idx - 1).toString() + "-to-stop");
                     prevElt.value = event.target.value;
                 }
             }
@@ -962,10 +1025,10 @@
             return "white";
         }
 
-        function extractParamsFromState(state) {
+        function extractSegmentsFromState(state, prefix) {
             var segments = [];
-            for (var i = 0; i < state.segments.length; i++) {
-                var segment = state.segments[i];
+            for (var i = 0; i < state[prefix].segments.length; i++) {
+                var segment = state[prefix].segments[i];
 
                 var newSegment = [];
                 newSegment.fromStopIndex = parseInt(segment.fromStopIndex);
@@ -991,31 +1054,268 @@
                 segments.push(newSegment);
             }
 
+            return segments;
+        }
+
+        function extractParamsFromState(state) {
+            if (state.secondLinePresent) {
+                var lower = {
+                    stations: state.lower.stations,
+                    stationAttributes: state.lower.stationAttributes,
+                    arrows: {
+                        left: {
+                            present: state.lower.leftArrow.present,
+                            width: state.lower.leftArrow.width,
+                            text: state.lower.leftArrow.text,
+                            color: parseColor(state.lower.leftArrow.color),
+                            textColor: parseTextColor(state.lower.leftArrow.color)
+                        },
+                        right: {
+                            present: state.lower.rightArrow.present,
+                            width: state.lower.rightArrow.width,
+                            text: state.lower.rightArrow.text,
+                            color: parseColor(state.lower.rightArrow.color),
+                            textColor: parseTextColor(state.lower.rightArrow.color)
+                        }
+                    },
+                    segmentCount: state.lower.segmentCount,
+                    segments: extractSegmentsFromState(state, "lower")
+                }
+            } else {
+                var lower = {};
+            }
+
             return {
                 width: state.width,
-                stations: state.stations,
+                autoWidth: state.autoWidth,
+                secondLinePresent: state.secondLinePresent,
                 style: state.style,
-                stationAttributes: state.stationAttributes,
-                arrows: {
-                    autoWidth: state.autoWidth,
-                    left: {
-                        present: state.leftArrow.present,
-                        width: state.leftArrow.width,
-                        text: state.leftArrow.text,
-                        color: parseColor(state.leftArrow.color),
-                        textColor: parseTextColor(state.leftArrow.color)
+                upper: {
+                    stations: state.upper.stations,
+                    stationAttributes: state.upper.stationAttributes,
+                    arrows: {
+                        left: {
+                            present: state.upper.leftArrow.present,
+                            width: state.upper.leftArrow.width,
+                            text: state.upper.leftArrow.text,
+                            color: parseColor(state.upper.leftArrow.color),
+                            textColor: parseTextColor(state.upper.leftArrow.color)
+                        },
+                        right: {
+                            present: state.upper.rightArrow.present,
+                            width: state.upper.rightArrow.width,
+                            text: state.upper.rightArrow.text,
+                            color: parseColor(state.upper.rightArrow.color),
+                            textColor: parseTextColor(state.upper.rightArrow.color)
+                        }
                     },
-                    right: {
-                        present: state.rightArrow.present,
-                        width: state.rightArrow.width,
-                        text: state.rightArrow.text,
-                        color: parseColor(state.rightArrow.color),
-                        textColor: parseTextColor(state.rightArrow.color)
-                    }
+                    segmentCount: state.upper.segmentCount,
+                    segments: extractSegmentsFromState(state, "upper")
                 },
-                segmentCount: state.segmentCount,
-                segments: segments
+                lower: lower
             };
+        }
+
+        function drawArrowText(diagram, arrow, style) {
+            var arrowTextLines = arrow.text.split("//");
+            return diagram
+                .text(function(add) {
+                    for (var i = 0; i < arrowTextLines.length; i++) {
+                        add.tspan(arrowTextLines[i]).newLine();
+                    }
+                })
+                .stroke("none")
+                .fill(arrow.textColor)
+                .font({
+                    weight: "bold",
+                    size: style.arrowTextSize + "px",
+                    family: "sans-serif",
+                    anchor: "middle"
+                });
+        }
+
+        function drawSegments(group, segments, startX, stationDX) {
+            for (var i = 0; i < segments.length; i++) {
+                var segment = segments[i];
+
+                var x1 = startX + stationDX * segment.fromStopIndex;
+                var x2 = startX + stationDX * segment.toStopIndex;
+                var lineStroke = { color: segment.color, width: segment.width };
+                if (segment.dasharray) { lineStroke.dasharray = segment.dasharray; }
+                if (segment.linecap) { lineStroke.linecap = segment.linecap; }
+
+                group.line(x1, 0, x2, 0).stroke(lineStroke);
+            }
+        }
+
+        function drawOctagonStation(group, centerX, centerY, idx, segments, style) {
+            var currentSegment;
+            for (var j = 0; j < segments.length; j++) {
+                var segment = segments[j];
+
+                if (segment.fromStopIndex <= idx && segment.toStopIndex > idx) {
+                    currentSegment = segments[j];
+                }
+            }
+
+            var r = style.stationRadius - style.stationStroke / 2;
+            if (currentSegment !== undefined && !(["shuttle", "walk"].includes(currentSegment.style))){
+                var r2 = style.stationRadius + style.stationStroke / 4;
+                var octagonStroke = { color: "white", width: style.stationStroke / 2 };
+            } else {
+                var r2 = r;
+                var octagonStroke = { color: "red", width: style.stationStroke };
+            }
+
+            var side = 2 * r2 / (1 + RT2);
+            var points = [
+                [(side / 2 * (1 + RT2)), (side / 2)],
+                [(side / 2), (side / 2 * (1 + RT2))],
+                [(-side / 2), (side / 2 * (1 + RT2))],
+                [(-side / 2 * (1 + RT2)), (side / 2)],
+                [(-side / 2 * (1 + RT2)), (-side / 2)],
+                [(-side / 2), (-side / 2 * (1 + RT2))],
+                [(side / 2), (-side / 2 * (1 + RT2))],
+                [(side / 2 * (1 + RT2)), (-side / 2)],
+            ];
+
+            group.polygon(points.join(" "))
+                 .move(centerX - r2, centerY - r2)
+                 .fill("red")
+                 .stroke(octagonStroke);
+
+            group.line(-r/2, -r/2, r/2, r/2)
+                 .move(centerX - r/2, centerY - r/2)
+                 .stroke({ color: "white", width: style.stationRadius / 3 });
+
+            group.line(-r/2, r/2, r/2, -r/2)
+                 .move(centerX - r/2, centerY - r/2)
+                 .stroke({ color: "white", width: style.stationRadius / 3 });
+        }
+
+        function drawCircleStation(group, centerX, centerY, idx, segments, style) {
+            for (var j = 0; j < segments.length; j++) {
+                var segment = segments[j];
+
+                if (idx > segment.fromStopIndex && idx <= segment.toStopIndex) {
+                    var stopStrokeColor = segment.color;
+
+                    if (["shuttle", "walk", "disabled"].includes(segment.style) && j < segments.length - 1 && idx == segment.toStopIndex) {
+                        stopStrokeColor = segments[j + 1].color;
+                    }
+                }
+
+                if (idx == 0 && segment.fromStopIndex == 0) {
+                    stopStrokeColor = segment.color;
+                }
+            }
+            var r = style.stationRadius - style.stationStroke / 2;
+            group.circle(2 * r)
+                 .move(centerX - r, centerY - r)
+                 .fill("white")
+                 .stroke({ color: stopStrokeColor, width: style.stationStroke });
+        }
+
+        function drawStationLabel(group, centerX, station, style, textAnchor) {
+            return group
+                .text(function(add) {
+                    add.tspan(station).newLine();
+                })
+                .rotate(STATION_TEXT_ANGLE, centerX - style.stationTextSize / 2, 0)
+                .move(centerX - style.stationTextSize / 2, 0)
+                .font({
+                    family: "sans-serif",
+                    weight: "bold",
+                    size: style.stationTextSize + "px",
+                    "text-anchor": textAnchor || "start"
+                });
+
+        }
+
+        function drawStations(stationGroup, textGroup, stations, stationAttributes, segments, style, startX, stationDX, isaSymbol, textAnchor) {
+            for (var i = 0; i < stations.length; i++) {
+                var station = stations[i];
+
+                var centerX = startX + i * stationDX;
+                var centerY = 0;
+
+                if (stationAttributes[station].skipped) {
+                    drawOctagonStation(stationGroup, centerX, centerY, i, segments, style);
+                } else {
+                    drawCircleStation(stationGroup, centerX, centerY, i, segments, style);
+                }
+
+                var text = drawStationLabel(textGroup, centerX, station, style, textAnchor);
+                if (stationAttributes[station].accessible) {
+                    // TODO: Improve ISA Symbol positioning logic
+                    if (textAnchor == "end") {
+                        var isaX = centerX - style.stationTextSize / 2
+                            - (text.length() + style.stationTextSize) * Math.cos(STATION_TEXT_ANGLE * Math.PI / 180);
+                        var isaY = -(text.length() + 3 * style.stationTextSize / 2) * Math.sin(STATION_TEXT_ANGLE * Math.PI / 180);
+                    } else {
+                        var isaX = centerX - style.stationTextSize / 2
+                            + (text.length() + style.stationTextSize / 4) * Math.cos(STATION_TEXT_ANGLE * Math.PI / 180);
+                        var isaY = (text.length() + style.stationTextSize / 4) * Math.sin(STATION_TEXT_ANGLE * Math.PI / 180);
+                    }
+                    textGroup.use(isaSymbol)
+                             .rotate(STATION_TEXT_ANGLE, isaX, isaY)
+                             .move(isaX, isaY);
+                }
+            }
+        }
+
+        // ISA Symbol from Wikipedia
+        function drawISASymbol(diagram, style) {
+            var isaSymbol = diagram.symbol();
+            isaSymbol.path("M161.9882813,98.1240234 c24.9628906-2.3046875,44.3574219-23.8110352,44.3574219-48.9658203C206.3457031,22.0830078,184.2626953,0,157.1875,0 s-49.1572266,22.0830078-49.1572266,49.1582031c0,8.2568359,2.3037109,16.7055664,6.1445313,23.8105469l17.515625,246.4667969 l180.3964844,0.0488281l73.9912109,173.3652344l97.1445313-38.0976563l-15.0429688-35.8203125l-54.3662109,19.625 l-71.5908203-165.2802734l-167.7294922,1.1269531l-2.3027344-31.2128906l121.4228516,0.0483398v-46.1831055l-126.0546875-0.0493164 L161.9882813,98.1240234z").fill("black");
+            isaSymbol.path("M343.4199219,451.5908203 c-30.4472656,60.1875-94.1748047,99.8398438-162.1503906,99.8398438C81.4296875,551.4306641,0,470.0009766,0,370.1611328 c0-70.1005859,42.4853516-135.2436523,105.8818359-164.1210938l4.1025391,53.5375977 c-37.4970703,23.628418-60.6123047,66.262207-60.6123047,110.9506836c0,72.4267578,59.0712891,131.4970703,131.4970703,131.4970703 c66.2617188,0,122.7646484-50.8515625,130.4697266-116.0869141L343.4199219,451.5908203z").fill("black");
+            isaSymbol.viewbox(0, 0, 483.2226563, 551.4306641);
+            isaSymbol.size(style.stationTextSize, style.stationTextSize);
+
+            return isaSymbol;
+        }
+
+        function drawArrow(group, centerX, centerY, arrow, textElt, style, reflect, width) {
+            var dy = style.stationRadius - style.stationStroke / 2;
+
+            if (reflect) {
+                var points = [
+                    [width - style.stationStroke / RT2, centerY],
+                    [width - style.stationRadius, centerY + dy],
+                    [width - arrow.width - style.stationRadius, centerY + dy],
+                    [width - arrow.width - style.stationRadius, centerY - dy],
+                    [width - style.stationRadius, (centerY - dy)]
+                ];
+            } else {
+                var points = [
+                    [style.stationStroke / RT2, centerY],
+                    [style.stationRadius, centerY + dy],
+                    [arrow.width + style.stationRadius, centerY + dy],
+                    [arrow.width + style.stationRadius, centerY - dy],
+                    [style.stationRadius, (centerY - dy)]
+                ];
+            }
+
+            group.polygon(points.join(" "))
+                 .fill(arrow.color)
+                 .stroke({color: arrow.color, width: style.stationStroke});
+
+            var r = style.stationRadius - style.stationStroke / 2;                
+            group.circle(2 * r)
+                 .move(centerX - r, centerY - r)
+                 .fill("white")
+                 .stroke({ color: arrow.color, width: style.stationStroke });
+
+            group.add(textElt);
+
+            if (reflect) {
+                var arrowTextX = width - style.stationRadius - textElt.bbox().w / 2;
+            } else {
+                var arrowTextX = style.stationRadius + textElt.bbox().w / 2;
+            }
+            
+            var arrowTextY = centerY - textElt.bbox().h / 2;
+            textElt.move(arrowTextX, arrowTextY);
         }
 
         function draw(params) {
@@ -1037,201 +1337,132 @@
             var textGroup = container.group();
             var lineGroup = container.group();
             var stationGroup = container.group();
-            if (params.arrows.left.present) { var leftArrowGroup = container.group(); }
-            if (params.arrows.right.present) { var rightArrowGroup = container.group(); }
+            if (params.upper.arrows.left.present) { var leftArrowGroup = container.group(); }
+            if (params.upper.arrows.right.present) { var rightArrowGroup = container.group(); }
 
-            // ISA Symbol from Wikipedia
-            var isaSymbol = diagram.symbol();
-            isaSymbol.path("M161.9882813,98.1240234 c24.9628906-2.3046875,44.3574219-23.8110352,44.3574219-48.9658203C206.3457031,22.0830078,184.2626953,0,157.1875,0 s-49.1572266,22.0830078-49.1572266,49.1582031c0,8.2568359,2.3037109,16.7055664,6.1445313,23.8105469l17.515625,246.4667969 l180.3964844,0.0488281l73.9912109,173.3652344l97.1445313-38.0976563l-15.0429688-35.8203125l-54.3662109,19.625 l-71.5908203-165.2802734l-167.7294922,1.1269531l-2.3027344-31.2128906l121.4228516,0.0483398v-46.1831055l-126.0546875-0.0493164 L161.9882813,98.1240234z").fill("black");
-            isaSymbol.path("M343.4199219,451.5908203 c-30.4472656,60.1875-94.1748047,99.8398438-162.1503906,99.8398438C81.4296875,551.4306641,0,470.0009766,0,370.1611328 c0-70.1005859,42.4853516-135.2436523,105.8818359-164.1210938l4.1025391,53.5375977 c-37.4970703,23.628418-60.6123047,66.262207-60.6123047,110.9506836c0,72.4267578,59.0712891,131.4970703,131.4970703,131.4970703 c66.2617188,0,122.7646484-50.8515625,130.4697266-116.0869141L343.4199219,451.5908203z").fill("black");
-            isaSymbol.viewbox(0, 0, 483.2226563, 551.4306641);
-            isaSymbol.size(params.style.stationTextSize, params.style.stationTextSize);
-
-
-            if (params.arrows.left.present) {
-                // Text label
-                var leftArrowTextLines = params.arrows.left.text.split("//");
-                var leftArrowTextElt = leftArrowGroup
-                    .text(function(add) {
-                        for (var i = 0; i < leftArrowTextLines.length; i++) {
-                            add.tspan(leftArrowTextLines[i]).newLine();
-                        }
-                    })
-                    .stroke("none")
-                    .fill(params.arrows.left.textColor)
-                    .font({
-                        weight: "bold",
-                        size: params.style.arrowTextSize + "px",
-                        family: "sans-serif",
-                        anchor: "middle"
-                    });
+            if (params.secondLinePresent) {
+                var lowerTextGroup = container.group();
+                var lowerLineGroup = container.group();
+                var lowerStationGroup = container.group();
+                if (params.lower.arrows.left.present) { var lowerLeftArrowGroup = container.group(); }
+                if (params.lower.arrows.right.present) { var lowerRightArrowGroup = container.group(); }
             }
 
-            if (params.arrows.right.present) {
-                // Text label
-                var rightArrowTextLines = params.arrows.right.text.split("//");
-                var rightArrowTextElt = diagram
-                    .text(function(add) {
-                        for (var i = 0; i < rightArrowTextLines.length; i++) {
-                            add.tspan(rightArrowTextLines[i]).newLine();
-                        }
-                    })
-                    .stroke("none")
-                    .fill(params.arrows.right.textColor)
-                    .font({
-                        weight: "bold",
-                        size: params.style.arrowTextSize + "px",
-                        family: "sans-serif",
-                        anchor: "middle"
-                    })
+            var isaSymbol = drawISASymbol(diagram, params.style);
+
+            // Arrow text
+            if (params.upper.arrows.left.present) {
+                var leftArrowTextElt = drawArrowText(diagram, params.upper.arrows.left, params.style);
             }
 
-            if (params.arrows.autoWidth) {
+            if (params.upper.arrows.right.present) {
+                var rightArrowTextElt = drawArrowText(diagram, params.upper.arrows.right, params.style);
+            }
+
+            if (params.secondLinePresent && params.lower.arrows.left.present) {
+                var lowerLeftArrowTextElt = drawArrowText(diagram, params.lower.arrows.left, params.style);
+            }
+
+            if (params.secondLinePresent && params.lower.arrows.right.present) {
+                var lowerRightArrowTextElt = drawArrowText(diagram, params.lower.arrows.right, params.style);
+            }
+
+            if (params.autoWidth) {
                 // Compute new widths
-                if (params.arrows.left.present) {
-                    params.arrows.left.width = Math.round(leftArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("left-arrow-width").value = params.arrows.left.width;
+                // TODO fix this
+                if (params.upper.arrows.left.present) {
+                    params.upper.arrows.left.width = Math.round(leftArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("upper-left-arrow-width").value = params.upper.arrows.left.width;
                 }
 
-                if (params.arrows.right.present) {
-                    params.arrows.right.width = Math.round(rightArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("right-arrow-width").value = params.arrows.right.width;
+                if (params.upper.arrows.right.present) {
+                    params.upper.arrows.right.width = Math.round(rightArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("upper-right-arrow-width").value = params.upper.arrows.right.width;
+                }
+
+                if (params.secondLinePresent && params.lower.arrows.left.present) {
+                    params.lower.arrows.left.width = Math.round(lowerLeftArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("lower-left-arrow-width").value = params.lower.arrows.left.width;
+                }
+
+                if (params.secondLinePresent && params.lower.arrows.right.present) {
+                    params.lower.arrows.right.width = Math.round(lowerRightArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    document.getElementById("lower-right-arrow-width").value = params.lower.arrows.right.width;
                 }
             }
 
-            ///////////////////////////////////////////////////////////////////
             // Compute startX, endX, stationDX
-            ///////////////////////////////////////////////////////////////////
+            // TODO fix this
             var startX = params.style.stationRadius;
             var endX = params.width - params.style.stationRadius;
-            if (params.arrows.left.present) { startX += params.arrows.left.width };
-            if (params.arrows.right.present) { endX -= params.arrows.right.width };
+
+            if (params.upper.arrows.left.present) {
+                if (params.secondLinePresent && params.lower.arrows.left.present) {
+                    startX += Math.max(params.upper.arrows.left.width, params.lower.arrows.left.width);
+                } else {
+                    startX += params.upper.arrows.left.width;
+                }
+            }
+
+            if (params.upper.arrows.right.present) {
+                if (params.secondLinePresent && params.lower.arrows.right.present) {
+                    endX -= Math.max(params.upper.arrows.right.width, params.lower.arrows.right.width);
+                } else {
+                    endX -= params.upper.arrows.right.width;
+                }
+            }
 
             var stationDX = 0;
-            if (params.stations.length > 1) {
-                stationDX = (endX - startX) / (params.stations.length - 1);
+            if (params.upper.stations.length > 1) {
+                stationDX = (endX - startX) / (params.upper.stations.length - 1);
             }
 
-            ///////////////////////////////////////////////////////////////////
-            // Draw lines
-            ///////////////////////////////////////////////////////////////////
-            for (var i = 0; i < params.segments.length; i++) {
-                var x1 = startX + stationDX * params.segments[i].fromStopIndex;
-                var x2 = startX + stationDX * params.segments[i].toStopIndex;
-                var lineStroke = {
-                    color: params.segments[i].color,
-                    width: params.segments[i].width
-                };
+            // Draw segments
+            drawSegments(lineGroup, params.upper.segments, startX, stationDX);
 
-                if (params.segments[i].dasharray) { 
-                    lineStroke.dasharray = params.segments[i].dasharray;
-                }
-
-                if (params.segments[i].linecap) {
-                    lineStroke.linecap = params.segments[i].linecap;
-                }
-
-                lineGroup.line(x1, 0, x2, 0).stroke(lineStroke)
+            if (params.secondLinePresent) {
+                drawSegments(lowerLineGroup, params.lower.segments, startX, stationDX);
             }
 
-            ///////////////////////////////////////////////////////////////////
             // Draw stations
-            ///////////////////////////////////////////////////////////////////
-            for (var i = 0; i < params.stations.length; i++) {
-                var centerX = startX + i * stationDX;
-                var centerY = 0;
-                var r = params.style.stationRadius - params.style.stationStroke / 2;
+            drawStations(
+                stationGroup,
+                textGroup,
+                params.upper.stations,
+                params.upper.stationAttributes,
+                params.upper.segments,
+                params.style,
+                startX,
+                stationDX,
+                isaSymbol
+            );
 
-                if (params.stationAttributes[params.stations[i]].skipped) {
-                    // Red Octagon for skipped stop
-                    var currentSegment;
-                    for (var j = 0; j < params.segments.length; j++) {
-                        if (params.segments[j].fromStopIndex < i && params.segments[j].toStopIndex > i) {
-                            currentSegment = params.segments[j];
-                        }
-                    }
-
-                    if (currentSegment !== undefined && !(["shuttle", "walk"].includes(currentSegment.style))) {
-                        // Border
-                        var r2 = params.style.stationRadius + params.style.stationStroke / 4;
-                        var octagonStroke = { color: "white", width: params.style.stationStroke / 2 };
-                    } else {
-                        var r2 = r;
-                        var octagonStroke = { color: "red", width: params.  style.stationStroke };
-                    }
-
-                    var side = 2 * r2 / (1 + RT2);
-                    var points = [
-                        [(side / 2 * (1 + RT2)), (side / 2)],
-                        [(side / 2), (side / 2 * (1 + RT2))],
-                        [(-side / 2), (side / 2 * (1 + RT2))],
-                        [(-side / 2 * (1 + RT2)), (side / 2)],
-                        [(-side / 2 * (1 + RT2)), (-side / 2)],
-                        [(-side / 2), (-side / 2 * (1 + RT2))],
-                        [(side / 2), (-side / 2 * (1 + RT2))],
-                        [(side / 2 * (1 + RT2)), (-side / 2)],
-                    ];
-
-                    stationGroup.polygon(points.join(" "))
-                                .move(centerX - r2, centerY - r2)
-                                .fill("red")
-                                .stroke(octagonStroke);
-
-                    stationGroup.line(-r/2, -r/2, r/2, r/2)
-                                .move(centerX - r/2, centerY - r/2)
-                                .stroke({ color: "white", width: params.style.stationRadius / 3 });
-
-                    stationGroup.line(-r/2, r/2, r/2, -r/2)
-                                .move(centerX - r/2, centerY - r/2)
-                                .stroke({ color: "white", width: params.style.stationRadius / 3 });
-                } else {
-                    // Circle for normal stop
-                    for (var j = 0; j < params.segments.length; j++) {
-                        if (i > params.segments[j].fromStopIndex && i <= params.segments[j].toStopIndex) {
-                            var stopStrokeColor = params.segments[j].color;
-
-                            if ((stopStrokeColor == "black") && (j < params.segments.length - 1) && (i == params.segments[j].toStopIndex)) {
-                                stopStrokeColor = params.segments[j + 1].color;
-                            }
-                        }
-
-                        if ((i == 0) && (params.segments[j].fromStopIndex == 0)) {
-                            stopStrokeColor = params.segments[j].color;
-                        }
-                    }
-
-                    stationGroup.circle(2*r)
-                                .move(centerX - r, centerY - r)
-                                .fill("white")
-                                .stroke({ color: stopStrokeColor, width: params.style.stationStroke});
-                }
-
-                // Station label
-                var stationTextAngle = 315;
-                var text = textGroup
-                    .text(function(add) {
-                        add.tspan(params.stations[i]).newLine();
-                    })
-                    .rotate(stationTextAngle, centerX - params.style.stationTextSize / 2, 0)
-                    .move(centerX - params.style.stationTextSize / 2, 0)
-                    .font({
-                        family: "sans-serif",
-                        weight: "bold",
-                        size: params.style.stationTextSize + "px"
-                    });
-
-                // Station accessibility label
-                if (params.stationAttributes[params.stations[i]].accessible) {
-                    var ISAX = centerX - params.style.stationTextSize / 2
-                        + (text.length() + params.style.stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
-                    var ISAY = (text.length() + params.style.stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
-                    textGroup.use(isaSymbol)
-                             .rotate(stationTextAngle, ISAX, ISAY)
-                             .move(ISAX, ISAY);
-                }
+            if (params.secondLinePresent) {
+                drawStations(
+                    lowerStationGroup,
+                    lowerTextGroup,
+                    params.lower.stations,
+                    params.lower.stationAttributes,
+                    params.lower.segments,
+                    params.style,
+                    startX,
+                    stationDX,
+                    isaSymbol,
+                    "end"
+                );
             }
 
-            // Used measured element heights to set Y coordinates of groups
+            // TODO fix ISA symbol positioning
+            // if (params.lower.stationAttributes[params.lower.stations[i]].accessible) {
+            //     var ISAX = centerX - params.style.stationTextSize / 2
+            //         - (text.length() + 4 * params.style.stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
+            //     var ISAY = (text.length() + 6 * params.style.stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
+            //     lowerTextGroup.use(isaSymbol)
+            //              .rotate(stationTextAngle, ISAX, -ISAY)
+            //              .move(ISAX, -ISAY);
+            // }
+
+            // Use measured element heights to set Y coordinates of groups
             var measuredTextHeight = textGroup.bbox().h;
             var measuredLineHeight = stationGroup.bbox().h;
             var lineY = measuredTextHeight + measuredLineHeight / 2 + params.style.lineExtraSpace;
@@ -1239,86 +1470,35 @@
             lineGroup.move(0, lineY);
             stationGroup.move(0, lineY);
             textGroup.move(0, measuredTextHeight - params.style.stationTextSize);
-            diagram.size(params.width, measuredTextHeight + measuredLineHeight);
 
-            ///////////////////////////////////////////////////////////////////
-            // Draw left arrow
-            ///////////////////////////////////////////////////////////////////
-            if (params.arrows.left.present) {
-                // Arrow
-                var dy = params.style.stationRadius - params.style.stationStroke / 2;
-                var points = [
-                    [params.style.stationStroke / RT2, lineY],
-                    [params.style.stationRadius, lineY + dy],
-                    [params.arrows.left.width + params.style.stationRadius, lineY + dy],
-                    [params.arrows.left.width + params.style.stationRadius, lineY - dy],
-                    [params.style.stationRadius, (lineY - dy)]
-                ];
-
-
-                leftArrowGroup.polygon(points.join(" "))
-                              .fill(params.arrows.left.color)
-                              .stroke({color: params.arrows.left.color, width: params.style.stationStroke});
-
-                // Circle
-                var centerX = startX;
-                var centerY = lineY;
-                var r = params.style.stationRadius - params.style.stationStroke / 2;  
-                leftArrowGroup.circle(2 * r)
-                              .move(centerX - r, centerY - r)
-                              .fill("white")
-                              .stroke({ color: params.arrows.left.color, width: params.style.stationStroke});
-
-                leftArrowGroup.add(leftArrowTextElt);
-
-                // Adjust position based on measured height and width
-                var leftArrowTextX = params.style.stationRadius + leftArrowTextElt.bbox().w / 2;
-                var leftArrowTextY = lineY - leftArrowTextElt.bbox().h / 2;
-                leftArrowTextElt.move(leftArrowTextX, leftArrowTextY);
+            if (params.secondLinePresent) {
+                var lowerLineY = lineY + params.style.stationRadius * 4;
+                lowerLineGroup.move(0, lowerLineY);
+                lowerStationGroup.move(0, lowerLineY);
+                lowerTextGroup.move(0, lowerLineY + params.style.stationTextSize);
             }
 
-            ///////////////////////////////////////////////////////////////////
-            // Draw right arrow
-            ///////////////////////////////////////////////////////////////////
-            if (params.arrows.right.present) {
-                // Arrow
-                var dy = params.style.stationRadius - params.style.stationStroke / 2;
-                var points = [
-                    [params.width - params.style.stationStroke / RT2, lineY],
-                    [params.width - params.style.stationRadius, lineY + dy],
-                    [params.width - params.arrows.right.width - params.style.stationRadius, lineY + dy],
-                    [params.width - params.arrows.right.width - params.style.stationRadius, lineY - dy],
-                    [params.width - params.style.stationRadius, lineY - dy],
-                ];
-
-                rightArrowGroup.polygon(points.join(" "))
-                               .fill(params.arrows.right.color)
-                               .stroke({color: params.arrows.right.color, width: params.style.stationStroke});
-
-                // Circle
-                var centerX = endX;
-                var centerY = lineY;
-                var r = params.style.stationRadius - params.style.stationStroke / 2;
-                rightArrowGroup.circle(2 * r)
-                               .move(centerX - r, centerY - r)
-                               .fill("white")
-                               .stroke({ color: params.arrows.right.color, width: params.style.stationStroke});
-
-                rightArrowGroup.add(rightArrowTextElt);
-                
-
-                // Adjust position based on measured height and width
-                var rightArrowTextX = params.width - params.style.stationRadius - rightArrowTextElt.bbox().w / 2;
-                var rightArrowTextY = lineY - rightArrowTextElt.bbox().h / 2;
-                rightArrowTextElt.move(rightArrowTextX, rightArrowTextY);
+            // Draw arrows
+            if (params.upper.arrows.left.present) {
+                drawArrow(leftArrowGroup, startX, lineY, params.upper.arrows.left, leftArrowTextElt, params.style);
+            }
+            
+            if (params.secondLinePresent && params.lower.arrows.left.present) {
+                drawArrow(lowerLeftArrowGroup, startX, lowerLineY, params.lower.arrows.left, lowerLeftArrowTextElt, params.style);
             }
 
-            // Add padding, including extra padding on RHS if necessary
-            var lastTextEndX = textGroup.bbox().x2;
-            var measuredWidth = Math.max(params.width, lastTextEndX);
-            var measuredHeight = measuredTextHeight + measuredLineHeight + params.style.lineExtraSpace;
-            diagram.size(measuredWidth + 2 * params.style.padding, measuredHeight + 2 * params.style.padding);
-            container.move(params.style.padding, params.style.padding);
+            if (params.upper.arrows.right.present) {
+                drawArrow(rightArrowGroup, endX, lineY, params.upper.arrows.right, rightArrowTextElt, params.style, true, params.width);
+            }
+            
+            if (params.secondLinePresent && params.lower.arrows.right.present) {
+                drawArrow(lowerRightArrowGroup, endX, lowerLineY, params.lower.arrows.right, lowerRightArrowTextElt, params.style, true, params.width);
+            }
+
+            // Add padding, including extra padding on sides if necessary
+            var bbox = container.bbox();
+            diagram.size(bbox.w + 2 * params.style.padding, bbox.h + 2 * params.style.padding);
+            container.move(params.style.padding - bbox.x, params.style.padding - bbox.y);
         }
 
         var ROUTE_PATTERNS = {
