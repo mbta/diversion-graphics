@@ -25,7 +25,7 @@
         var state = null;
 
         document.addEventListener("DOMContentLoaded", function() {
-            state = getDefaultState();
+            state = NEWTON_HIGHLANDS_KENMORE_STATE;
             buildDOMFromState(state);
         });
 
@@ -52,6 +52,19 @@
             { id: "station-radius", attribute: "stationRadius", type: "number", label: "Station Radius", default: 24 },
             { id: "station-stroke", attribute: "stationStroke", type: "number", label: "Station Stroke", default: 6 },
         ];
+
+        var DEFAULT_STYLE = {};
+        for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
+            var style = STYLE_ATTRIBUTES[i];
+            DEFAULT_STYLE[style.attribute] = style.default;
+        }
+
+        var DEFAULT_SELECTED = {
+            routePattern: null,
+            direction: null,
+            fromStop: null,
+            toStop: null
+        };
 
         // Adapted from https://stackoverflow.com/questions/28226677/save-inline-svg-as-jpeg-png-svg
         function save() {
@@ -329,12 +342,31 @@
             }
         }
 
+        function getAlignmentFromDOM(prefix) {
+            var method = document.getElementById(prefix + "-alignment-select").value;
+
+            if (method == "left") {
+                var offsetElt = document.getElementById(prefix + "-alignment-offset");
+                if (offsetElt === null) {
+                    var offset = 0;
+                } else {
+                    var offset = parseInt(offsetElt.value);
+                }
+                return { method: method, offset: offset };
+            } else {
+                return { method: method };
+            }
+        }
+
         function getStateFromDOM() {
             state.secondLinePresent = document.getElementById("second-line-present").checked;
             state.width = parseInt(document.getElementById("width").value);
             state.downloadWidth = parseInt(document.getElementById("download-width").value);
             state.autoWidth = document.getElementById("auto-width").checked;
             state.style = getStyleFromDOM();
+
+            state.selectedExample = document.getElementById("example").value;
+            if (state.selectedExample == "null") { state.selectedExample = null; }
 
             state.upper.selected = getSelectedFromDOM("upper");
             
@@ -355,7 +387,7 @@
                 // If we've just checked the box to add a second line, use a default state
                 var testElt = document.getElementById("lower-stations");
                 if (testElt === null) {
-                    state.lower = getDefaultLine();
+                    state.lower = NEWTON_HIGHLANDS_KENMORE_UPPER;
                 } else {
                     state.lower.selected = getSelectedFromDOM("lower");
                     
@@ -371,90 +403,15 @@
                     // Segments
                     state.lower.segmentCount = parseInt(document.getElementById("lower-segment-count").value);
                     state.lower.segments = getSegmentsFromDOM("lower");
+
+                    // Alignment
+                    state.lower.alignment = getAlignmentFromDOM("lower");
                 }
             } else {
                 state.lower = {};
             }
 
             buildDOMFromState(state);
-        }
-
-        function getDefaultLine() {
-            var defaultSelected = {
-                routePattern: null,
-                direction: null,
-                fromStop: null,
-                toStop: null
-            };
-
-            var stations = [
-                "NEWTON HIGHLANDS",
-                "NEWTON CENTRE",
-                "CHESTNUT HILL",
-                "RESERVOIR",
-                "BEACONSFIELD",
-                "BROOKLINE HILLS",
-                "BROOKLINE VILLAGE",
-                "LONGWOOD",
-                "FENWAY",
-                "KENMORE"
-            ];
-
-            var stationAttributes = {
-                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
-                "NEWTON CENTRE": { accessible: true, skipped: false },
-                "CHESTNUT HILL": { accessible: false, skipped: false },
-                "RESERVOIR": { accessible: true, skipped: false },
-                "BEACONSFIELD": { accessible: false, skipped: true },
-                "BROOKLINE HILLS": { accessible: true, skipped: false },
-                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
-                "LONGWOOD": { accessible: true, skipped: false },
-                "FENWAY": { accessible: true, skipped: false },
-                "KENMORE": { accessible: true, skipped: false }
-            };
-
-            var leftArrow = {
-                present: true,
-                width: 120,
-                text: "RIVERSIDE",
-                color: "green"
-            }
-
-            var rightArrow = {
-                present: true,
-                width: 120,
-                text: "PARK ST//& NORTH",
-                color: "green"
-            }
-
-            return {
-                selected: defaultSelected,
-                stationsText: stations.join("\n"),
-                stations: stations,
-                stationAttributes: copy(stationAttributes),
-                leftArrow: leftArrow,
-                rightArrow: rightArrow,
-                segmentCount: 1,
-                segments: [{ fromStopIndex: 0, toStopIndex: stations.length - 1, style: "shuttle" }]
-            };
-        }
-
-        function getDefaultState() {
-            var defaultStyle = {};
-            for (var i = 0; i < STYLE_ATTRIBUTES.length; i++) {
-                var style = STYLE_ATTRIBUTES[i];
-                defaultStyle[style.attribute] = style.default;
-            }
-
-            return {
-                secondLinePresent: false,
-                width: 1000,
-                downloadWidth: 2600,
-                autoWidth: true,
-                style: defaultStyle,
-                upper: getDefaultLine(),
-                lower: {}
-            };
         }
 
         function getOrderedStops(state, prefix) {
@@ -556,6 +513,26 @@
             container.innerHTML = "";
 
             var table = document.createElement("table");
+
+            var exampleOptions = [
+                { name: "Green Line D (Newton Highlands - Kenmore)", value: "green-d" },
+                { name: "Haymarket Closure", value: "haymarket" },
+                { name: "Orange Line (Sullivan - Tufts)", value: "orange" }
+            ];
+            table.appendChild(
+                buildTableSelect("example", exampleOptions, state.selectedExample, "-- example --")
+            );
+
+            // Load button
+            var loadButton = document.createElement("input");
+            loadButton.type = "submit";
+            loadButton.value = "Load Example";
+            loadButton.onclick = function() { loadExample(); }
+            table.appendChild(loadButton);
+
+            var blankLine = document.createElement("tr");
+            blankLine.appendChild(document.createElement("br"));
+            table.appendChild(blankLine);
 
             table.appendChild(
                 buildTableInput("width", state.width, "number", "Width")
@@ -857,7 +834,7 @@
                 var lowerLineContainer = document.createElement("div");
                 lowerLineContainer.style = "display: flex;";
 
-                var containerNames = ["station", "station-attribute", "arrow", "segment"];
+                var containerNames = ["station", "station-attribute", "arrow", "segment", "alignment"];
                 for (var i = 0; i < containerNames.length; i++) {
                     var name = containerNames[i];
 
@@ -868,6 +845,37 @@
                 }
 
                 linesContainer.appendChild(lowerLineContainer);
+            }
+        }
+
+        function buildAlignmentFromState(state, prefix) {
+            var container = document.getElementById(prefix + "-alignment-container");
+            container.innerHTML = "";
+
+            var alignmentOptions = [
+                { name: "Left", value: "left" },
+                { name: "Justify", value: "justify" }
+                // TODO pin
+            ];
+            container.appendChild(
+                buildSelect(prefix + "-alignment-select", alignmentOptions, state[prefix].alignment.method)
+            );
+
+            if (state[prefix].alignment.method == "left") {
+                var offsetContainer = document.createElement("div");
+
+                var offsetInput = document.createElement("label");
+                offsetInput.innerHTML = "Offset by # stations: ";
+
+                var offsetElt = document.createElement("input");
+                offsetElt.id = prefix + "-alignment-offset";
+                offsetElt.value = state[prefix].alignment.offset;
+                offsetElt.type = "number";
+                offsetElt.onchange = function() { getStateFromDOM(); }
+
+                offsetContainer.appendChild(offsetInput);
+                offsetContainer.appendChild(offsetElt);
+                container.appendChild(offsetContainer);
             }
         }
 
@@ -890,7 +898,8 @@
                 buildStationsFromState(state, "lower");
                 buildStationGridFromState(state, "lower");
                 buildArrowsFromState(state, "lower");
-                buildSegmentsFromState(state, "lower");                
+                buildSegmentsFromState(state, "lower");
+                buildAlignmentFromState(state, "lower");
             }
 
             // Restore focus
@@ -1060,6 +1069,7 @@
         function extractParamsFromState(state) {
             if (state.secondLinePresent) {
                 var lower = {
+                    alignment: state.lower.alignment,
                     stations: state.lower.stations,
                     stationAttributes: state.lower.stationAttributes,
                     arrows: {
@@ -1275,24 +1285,24 @@
             return isaSymbol;
         }
 
-        function drawArrow(group, centerX, centerY, arrow, textElt, style, reflect, width) {
+        function drawArrow(group, centerX, centerY, arrow, textElt, style, reflect, startEndX) {
             var dy = style.stationRadius - style.stationStroke / 2;
 
             if (reflect) {
                 var points = [
-                    [width - style.stationStroke / RT2, centerY],
-                    [width - style.stationRadius, centerY + dy],
-                    [width - arrow.width - style.stationRadius, centerY + dy],
-                    [width - arrow.width - style.stationRadius, centerY - dy],
-                    [width - style.stationRadius, (centerY - dy)]
+                    [startEndX + style.stationRadius - style.stationStroke / RT2, centerY],
+                    [startEndX, centerY + dy],
+                    [startEndX - arrow.width, centerY + dy],
+                    [startEndX - arrow.width, centerY - dy],
+                    [startEndX, (centerY - dy)]
                 ];
             } else {
                 var points = [
-                    [style.stationStroke / RT2, centerY],
-                    [style.stationRadius, centerY + dy],
-                    [arrow.width + style.stationRadius, centerY + dy],
-                    [arrow.width + style.stationRadius, centerY - dy],
-                    [style.stationRadius, (centerY - dy)]
+                    [startEndX - style.stationRadius + style.stationStroke / RT2, centerY],
+                    [startEndX, centerY + dy],
+                    [startEndX + arrow.width, centerY + dy],
+                    [startEndX + arrow.width, centerY - dy],
+                    [startEndX, (centerY - dy)]
                 ];
             }
 
@@ -1309,9 +1319,9 @@
             group.add(textElt);
 
             if (reflect) {
-                var arrowTextX = width - style.stationRadius - textElt.bbox().w / 2;
+                var arrowTextX = startEndX - textElt.bbox().w / 2;
             } else {
-                var arrowTextX = style.stationRadius + textElt.bbox().w / 2;
+                var arrowTextX = startEndX + textElt.bbox().w / 2;
             }
             
             var arrowTextY = centerY - textElt.bbox().h / 2;
@@ -1369,59 +1379,150 @@
 
             if (params.autoWidth) {
                 // Compute new widths
-                // TODO fix this
                 if (params.upper.arrows.left.present) {
-                    params.upper.arrows.left.width = Math.round(leftArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("upper-left-arrow-width").value = params.upper.arrows.left.width;
+                    var upperLeftWidth = Math.round(leftArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    if (params.secondLinePresent && params.lower.arrows.left.present) {
+                        var lowerLeftWidth = Math.round(lowerLeftArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    } else {
+                        var lowerLeftWidth = 0;
+                    }
+
+                    var leftWidth = Math.max(upperLeftWidth, lowerLeftWidth);
+
+                    params.upper.arrows.left.width = leftWidth;
+                    document.getElementById("upper-left-arrow-width").value = leftWidth;
+
+                    if (params.secondLinePresent && params.lower.arrows.left.present) {
+                        params.lower.arrows.left.width = leftWidth;
+                        document.getElementById("lower-left-arrow-width").value = leftWidth;
+                    }
                 }
 
                 if (params.upper.arrows.right.present) {
-                    params.upper.arrows.right.width = Math.round(rightArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("upper-right-arrow-width").value = params.upper.arrows.right.width;
-                }
+                    var upperRightWidth = Math.round(rightArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    if (params.secondLinePresent && params.lower.arrows.right.present) {
+                        var lowerRightWidth = Math.round(lowerRightArrowTextElt.bbox().w + params.style.stationRadius * 2);
+                    } else {
+                        var lowerRightWidth = 0;
+                    }
 
-                if (params.secondLinePresent && params.lower.arrows.left.present) {
-                    params.lower.arrows.left.width = Math.round(lowerLeftArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("lower-left-arrow-width").value = params.lower.arrows.left.width;
-                }
+                    var rightWidth = Math.max(upperRightWidth, lowerRightWidth);
 
-                if (params.secondLinePresent && params.lower.arrows.right.present) {
-                    params.lower.arrows.right.width = Math.round(lowerRightArrowTextElt.bbox().w + params.style.stationRadius * 2);
-                    document.getElementById("lower-right-arrow-width").value = params.lower.arrows.right.width;
-                }
-            }
+                    params.upper.arrows.right.width = rightWidth;
+                    document.getElementById("upper-right-arrow-width").value = rightWidth;
 
-            // Compute startX, endX, stationDX
-            // TODO fix this
-            var startX = params.style.stationRadius;
-            var endX = params.width - params.style.stationRadius;
-
-            if (params.upper.arrows.left.present) {
-                if (params.secondLinePresent && params.lower.arrows.left.present) {
-                    startX += Math.max(params.upper.arrows.left.width, params.lower.arrows.left.width);
-                } else {
-                    startX += params.upper.arrows.left.width;
+                    if (params.secondLinePresent && params.lower.arrows.right.present) {
+                        params.lower.arrows.right.width = rightWidth;
+                        document.getElementById("lower-right-arrow-width").value = rightWidth;
+                    }
                 }
             }
 
-            if (params.upper.arrows.right.present) {
-                if (params.secondLinePresent && params.lower.arrows.right.present) {
-                    endX -= Math.max(params.upper.arrows.right.width, params.lower.arrows.right.width);
-                } else {
-                    endX -= params.upper.arrows.right.width;
+            ////////////////////////////////////////////////////////////////////////////////
+
+            // Compute total number of stations
+            if (params.secondLinePresent) {
+                if (params.lower.alignment.method == "left") {
+                    if (params.lower.alignment.offset < 0) {
+                        var startStationIndexUpper = -params.lower.alignment.offset;
+                        var startStationIndexLower = 0;
+                    } else {
+                        var startStationIndexUpper = 0;
+                        var startStationIndexLower = params.lower.alignment.offset;
+                    }
+
+                    var endStationIndexUpper = startStationIndexUpper + params.upper.stations.length - 1;
+                    var endStationIndexLower = startStationIndexLower + params.lower.stations.length - 1;
+                    var maxEndStationIndex = Math.max(endStationIndexUpper, endStationIndexLower);
+
+                    // Number of stations from the left which lower starts (relative to upper)
+                    var leftOffset = params.lower.alignment.offset;
+
+                    // Number of stations from the right which lower ends (relative to upper)
+                    var rightOffset = endStationIndexUpper - endStationIndexLower;
+
+                    // Get arrow lengths
+                    var upperLeftArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
+
+                    var lowerLeftArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.left.present) { lowerLeftArrowWidth += params.lower.arrows.left.width; }
+
+                    var upperRightArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
+
+                    var lowerRightArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.right.present) { lowerRightArrowWidth += params.lower.arrows.right.width; }
+
+                    // Solve for stationDX
+                    // Case 1: upper left / upper right
+                    var stationDX = (params.width - upperRightArrowWidth - upperLeftArrowWidth) / maxEndStationIndex;
+                    var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
+                    var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
+                    if (minStartX == upperLeftArrowWidth && maxEndX == upperRightArrowWidth) {
+                        // done!
+                        console.log("done 1");
+                    } else {
+                        // Case 2: upper left / lower right
+                        var stationDX = (params.width - (lowerRightArrowWidth - rightOffset * stationDX) - upperLeftArrowWidth) / maxEndStationIndex;
+                        var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
+                        var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
+                        if (minStartX == upperLeftArrowWidth && maxEndX == (lowerRightArrowWidth - rightOffset * stationDX)) {
+                            // done!
+                            console.log("done 2");
+                        } else {
+                            // Case 3: lower left / upper right
+                            var stationDX = (params.width - upperRightArrowWidth - (lowerLeftArrowWidth - leftOffset * stationDX)) / maxEndStationIndex;
+                            var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
+                            var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
+                            if (minStartX == (lowerLeftArrowWidth - leftOffset * stationDX) && maxEndX == upperRightArrowWidth) {
+                                // done!
+                                console.log("done 3")
+                            } else {
+                                // Case 4: lower left / lower right
+                                var stationDX = (params.width - (lowerRightArrowWidth - rightOffset * stationDX) - (lowerLeftArrowWidth - leftOffset * stationDX)) / maxEndStationIndex;
+                                var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
+                                var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
+                                console.log("done 4");
+                            }
+                        }
+                    }
+
+                    var startX = minStartX + startStationIndexUpper * stationDX;
+                    var lowerStartX = minStartX + startStationIndexLower * stationDX;
+                    var endX = minStartX + endStationIndexUpper * stationDX;
+                    var lowerEndX = minStartX + endStationIndexLower * stationDX;
+                } else if (params.lower.alignment.method == "justify") {
+                    // TODO
+                }
+            } else {
+                var upperLeftArrowWidth = params.style.stationRadius;
+                if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
+
+                var upperRightArrowWidth = params.style.stationRadius;
+                if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
+
+                var stationCount = params.upper.stations.length;
+
+                var startX = params.style.stationRadius;
+                if (params.upper.arrows.left.present) { startX += params.upper.arrows.left.width; }
+
+                var endX = params.width - params.style.stationRadius;
+                if (params.upper.arrows.right.present) { endX -= params.upper.arrows.right.width; }
+
+                var stationDX = 0;
+                if (params.upper.stations.length > 1) {
+                    stationDX = (endX - startX) / (params.upper.stations.length - 1);
                 }
             }
 
-            var stationDX = 0;
-            if (params.upper.stations.length > 1) {
-                stationDX = (endX - startX) / (params.upper.stations.length - 1);
-            }
+            ////////////////////////////////////////////////////////////////////////////////
 
             // Draw segments
             drawSegments(lineGroup, params.upper.segments, startX, stationDX);
 
             if (params.secondLinePresent) {
-                drawSegments(lowerLineGroup, params.lower.segments, startX, stationDX);
+                drawSegments(lowerLineGroup, params.lower.segments, lowerStartX, stationDX);
             }
 
             // Draw stations
@@ -1445,22 +1546,12 @@
                     params.lower.stationAttributes,
                     params.lower.segments,
                     params.style,
-                    startX,
+                    lowerStartX,
                     stationDX,
                     isaSymbol,
                     "end"
                 );
             }
-
-            // TODO fix ISA symbol positioning
-            // if (params.lower.stationAttributes[params.lower.stations[i]].accessible) {
-            //     var ISAX = centerX - params.style.stationTextSize / 2
-            //         - (text.length() + 4 * params.style.stationTextSize / 4) * Math.cos(stationTextAngle * Math.PI / 180);
-            //     var ISAY = (text.length() + 6 * params.style.stationTextSize / 4) * Math.sin(stationTextAngle * Math.PI / 180);
-            //     lowerTextGroup.use(isaSymbol)
-            //              .rotate(stationTextAngle, ISAX, -ISAY)
-            //              .move(ISAX, -ISAY);
-            // }
 
             // Use measured element heights to set Y coordinates of groups
             var measuredTextHeight = textGroup.bbox().h;
@@ -1480,19 +1571,19 @@
 
             // Draw arrows
             if (params.upper.arrows.left.present) {
-                drawArrow(leftArrowGroup, startX, lineY, params.upper.arrows.left, leftArrowTextElt, params.style);
+                drawArrow(leftArrowGroup, startX, lineY, params.upper.arrows.left, leftArrowTextElt, params.style, false, startX - params.upper.arrows.left.width);
             }
             
             if (params.secondLinePresent && params.lower.arrows.left.present) {
-                drawArrow(lowerLeftArrowGroup, startX, lowerLineY, params.lower.arrows.left, lowerLeftArrowTextElt, params.style);
+                drawArrow(lowerLeftArrowGroup, lowerStartX, lowerLineY, params.lower.arrows.left, lowerLeftArrowTextElt, params.style, false, lowerStartX - params.lower.arrows.left.width);
             }
 
             if (params.upper.arrows.right.present) {
-                drawArrow(rightArrowGroup, endX, lineY, params.upper.arrows.right, rightArrowTextElt, params.style, true, params.width);
+                drawArrow(rightArrowGroup, endX, lineY, params.upper.arrows.right, rightArrowTextElt, params.style, true, endX + params.upper.arrows.right.width);
             }
             
             if (params.secondLinePresent && params.lower.arrows.right.present) {
-                drawArrow(lowerRightArrowGroup, endX, lowerLineY, params.lower.arrows.right, lowerRightArrowTextElt, params.style, true, params.width);
+                drawArrow(lowerRightArrowGroup, lowerEndX, lowerLineY, params.lower.arrows.right, lowerRightArrowTextElt, params.style, true, lowerEndX + params.lower.arrows.right.width);
             }
 
             // Add padding, including extra padding on sides if necessary
@@ -1727,6 +1818,210 @@
                 directions: ["Eastbound", "Westbound"]
             }
         }
+
+        function loadExample() {
+            var exampleName = document.getElementById("example").value;
+
+            if (exampleName !== null) {
+                if (exampleName == "green-d") {
+                    state = NEWTON_HIGHLANDS_KENMORE_STATE;
+                } else if (exampleName == "haymarket") {
+                    state = HAYMARKET_CLOSED_STATE;
+                } else if (exampleName == "orange") {
+                    state = OL_SHUTTLE_STATE;
+                }
+
+                buildDOMFromState(state);
+            }
+        }
+
+        var NEWTON_HIGHLANDS_KENMORE_UPPER = {
+            selected: DEFAULT_SELECTED,
+            stationsText: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"].join("\n"),
+            stations: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"],
+            stationAttributes: {
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
+                "NEWTON CENTRE": { accessible: true, skipped: false },
+                "CHESTNUT HILL": { accessible: false, skipped: false },
+                "RESERVOIR": { accessible: true, skipped: false },
+                "BEACONSFIELD": { accessible: false, skipped: true },
+                "BROOKLINE HILLS": { accessible: true, skipped: false },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
+                "LONGWOOD": { accessible: true, skipped: false },
+                "FENWAY": { accessible: true, skipped: false },
+                "KENMORE": { accessible: true, skipped: false }
+            },
+            leftArrow: {
+                present: true,
+                width: 120,
+                text: "RIVERSIDE",
+                color: "green"
+            },
+            rightArrow: {
+                present: true,
+                width: 120,
+                text: "PARK ST//& NORTH",
+                color: "green"
+            },
+            segmentCount: 1,
+            segments: [{ fromStopIndex: 0, toStopIndex: 9, style: "shuttle" }]
+        };
+
+        var NEWTON_HIGHLANDS_KENMORE_STATE = {
+            secondLinePresent: false,
+            selectedExample: "green-d",
+            width: 1000,
+            downloadWidth: 2600,
+            autoWidth: true,
+            style: DEFAULT_STYLE,
+            upper: NEWTON_HIGHLANDS_KENMORE_UPPER,
+            lower: {}
+        };
+
+        var HAYMARKET_CLOSED_STATE = {
+            secondLinePresent: true,
+            selectedExample: "haymarket",
+            width: 1000,
+            downloadWidth: 2600,
+            autoWidth: true,
+            style: DEFAULT_STYLE,
+            upper: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING"].join("\n"),
+                stations: ["NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING"],
+                stationAttributes: {
+                    "NORTH STATION": { skipped: false, accessible: false },
+                    "HAYMARKET": { skipped: false, accessible: false },
+                    "STATE": { skipped: false, accessible: false },
+                    "DOWNTOWN CROSSING": { skipped: false, accessible: false }
+                },
+                leftArrow: {
+                    present: true,
+                    width: 120,
+                    text: "OAK GROVE",
+                    color: "orange"
+                },
+                rightArrow: {
+                    present: true,
+                    width: 120,
+                    text: "FOREST HILLS",
+                    color: "orange"
+                },
+                segmentCount: 1,
+                segments: [{ fromStopIndex: 0, toStopIndex: 3, style: "orange" }]
+            },
+            lower: {
+                alignment: {
+                    method: "left",
+                    offset: 0
+                },
+                selected: DEFAULT_SELECTED,
+                stationsText: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET"].join("\n"),
+                stations: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET"],
+                stationAttributes: {
+                    "NORTH STATION": { skipped: false, accessible: false },
+                    "HAYMARKET": { skipped: true, accessible: false },
+                    "GOVERNMENT CENTER": { skipped: false, accessible: false },
+                    "PARK STREET": { skipped: false, accessible: false }
+                },
+                leftArrow: {
+                    present: true,
+                    width: 120,
+                    text: "LECHMERE",
+                    color: "green"
+                },
+                rightArrow: {
+                    present: true,
+                    width: 120,
+                    text: "COPLEY & WEST",
+                    color: "green"
+                },
+                segmentCount: 2,
+                segments: [
+                    { fromStopIndex: 0, toStopIndex: 2, style: "disabled" },
+                    { fromStopIndex: 2, toStopIndex: 3, style: "green" }
+                ],
+                alignment: {
+                    method: "left",
+                    offset: 0
+                }
+            }
+        };
+
+        var OL_SHUTTLE_STATE = {
+            secondLinePresent: true,
+            selectedExample: "orange",
+            width: 1500,
+            downloadWidth: 2600,
+            autoWidth: true,
+            style: DEFAULT_STYLE,
+            upper: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET", "BOYLSTON", "ARLINGTON", "COPLEY"].join("\n"),
+                stations: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET", "BOYLSTON", "ARLINGTON", "COPLEY"],
+                stationAttributes: {
+                    "NORTH STATION": { skipped: false, accessible: true },
+                    "HAYMARKET": { skipped: false, accessible: true },
+                    "GOVERNMENT CENTER": { skipped: false, accessible: true },
+                    "PARK STREET": { skipped: false, accessible: true },
+                    "BOYLSTON": { skipped: false, accessible: false },
+                    "ARLINGTON": { skipped: false, accessible: true },
+                    "COPLEY": { skipped: false, accessible: true }
+                },
+                leftArrow: {
+                    present: true,
+                    width: 120,
+                    text: "LECHMERE",
+                    color: "green"
+                },
+                rightArrow: {
+                    present: true,
+                    width: 120,
+                    text: "KENMORE & WEST",
+                    color: "green"
+                },
+                segmentCount: 1,
+                segments: [{ fromStopIndex: 0, toStopIndex: 6, style: "green" }]
+            },
+            lower: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING", "CHINATOWN", "TUFTS MEDICAL CENTER", "BACK BAY"].join("\n"),
+                stations: ["SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING", "CHINATOWN", "TUFTS MEDICAL CENTER", "BACK BAY"],
+                stationAttributes: {
+                    "SULLIVAN SQUARE": { accessible: true, skipped: false },
+                    "COMMUNITY COLLEGE": { accessible: true, skipped: false },
+                    "NORTH STATION": { accessible: true, skipped: false },
+                    "HAYMARKET": { accessible: true, skipped: false },
+                    "STATE": { accessible: true, skipped: true },
+                    "DOWNTOWN CROSSING": { accessible: true, skipped: true },
+                    "CHINATOWN": { accessible: true, skipped: true },
+                    "TUFTS MEDICAL CENTER": { accessible: true, skipped: false },
+                    "BACK BAY": { accessible: true, skipped: false }
+                },
+                leftArrow: {
+                    present: true,
+                    width: 120,
+                    text: "OAK GROVE",
+                    color: "orange",
+                },
+                rightArrow: {
+                    present: true,
+                    width: 120,
+                    text: "FOREST HILLS",
+                    color: "orange"
+                },
+                segmentCount: 3,
+                segments: [
+                    { fromStopIndex: 0, toStopIndex: 3, style: "shuttle" },
+                    { fromStopIndex: 3, toStopIndex: 7, style: "disabled" },
+                    { fromStopIndex: 7, toStopIndex: 8, style: "orange" },
+                ],
+                alignment: {
+                    method: "left",
+                    offset: -2
+                }
+            }
+        };
     </script>
 </body>
 </html>
