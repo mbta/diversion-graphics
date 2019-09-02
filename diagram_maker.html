@@ -387,7 +387,7 @@
                 // If we've just checked the box to add a second line, use a default state
                 var testElt = document.getElementById("lower-stations");
                 if (testElt === null) {
-                    state.lower = NEWTON_HIGHLANDS_KENMORE_UPPER;
+                    state.lower = copy(DEFAULT_LOWER);
                 } else {
                     state.lower.selected = getSelectedFromDOM("lower");
                     
@@ -1439,7 +1439,7 @@
                     var leftOffset = params.lower.alignment.offset;
 
                     // Number of stations from the right which lower ends (relative to upper)
-                    var rightOffset = endStationIndexUpper - endStationIndexLower;
+                    var rightOffset = endStationIndexLower - endStationIndexUpper;
 
                     // Get arrow lengths
                     var upperLeftArrowWidth = params.style.stationRadius;
@@ -1454,44 +1454,51 @@
                     var lowerRightArrowWidth = params.style.stationRadius;
                     if (params.lower.arrows.right.present) { lowerRightArrowWidth += params.lower.arrows.right.width; }
 
-                    // Solve for stationDX
-                    // Case 1: upper left / upper right
-                    var stationDX = (params.width - upperRightArrowWidth - upperLeftArrowWidth) / maxEndStationIndex;
-                    var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
-                    var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
-                    if (minStartX == upperLeftArrowWidth && maxEndX == upperRightArrowWidth) {
-                        // done!
+                    // Set stationDX
+                    var stationCount;
+                    var leftWidth;
+                    var rightWidth;
+                    var stationDX;
+
+                    // Upper left, upper right
+                    stationCount = endStationIndexUpper - startStationIndexUpper;
+                    leftWidth = upperLeftArrowWidth;
+                    rightWidth = upperRightArrowWidth;
+                    stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+
+                    if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
                         console.log("done 1");
                     } else {
-                        // Case 2: upper left / lower right
-                        var stationDX = (params.width - (lowerRightArrowWidth - rightOffset * stationDX) - upperLeftArrowWidth) / maxEndStationIndex;
-                        var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
-                        var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
-                        if (minStartX == upperLeftArrowWidth && maxEndX == (lowerRightArrowWidth - rightOffset * stationDX)) {
-                            // done!
+                        // Upper left, lower right
+                        stationCount = endStationIndexLower - startStationIndexUpper;
+                        leftWidth = upperLeftArrowWidth;
+                        rightWidth = lowerRightArrowWidth;
+                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+                        if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (lowerRightArrowWidth + (rightOffset * stationDX) >= upperRightArrowWidth)) {
                             console.log("done 2");
                         } else {
-                            // Case 3: lower left / upper right
-                            var stationDX = (params.width - upperRightArrowWidth - (lowerLeftArrowWidth - leftOffset * stationDX)) / maxEndStationIndex;
-                            var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
-                            var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
-                            if (minStartX == (lowerLeftArrowWidth - leftOffset * stationDX) && maxEndX == upperRightArrowWidth) {
-                                // done!
-                                console.log("done 3")
+                            // Lower left, upper right
+                            stationCount = endStationIndexUpper - startStationIndexLower;
+                            leftWidth = lowerLeftArrowWidth;
+                            rightWidth = upperRightArrowWidth;
+                            stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+                            if ((lowerLeftArrowWidth - (leftOffset * stationDX) >= upperLeftArrowWidth) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
+                                console.log("done 3");
                             } else {
-                                // Case 4: lower left / lower right
-                                var stationDX = (params.width - (lowerRightArrowWidth - rightOffset * stationDX) - (lowerLeftArrowWidth - leftOffset * stationDX)) / maxEndStationIndex;
-                                var minStartX = Math.min(upperLeftArrowWidth, lowerLeftArrowWidth - leftOffset * stationDX);
-                                var maxEndX = Math.max(upperRightArrowWidth, lowerRightArrowWidth - rightOffset * stationDX);
+                                // Lower left, lower right
+                                stationCount = endStationIndexLower - startStationIndexLower;
+                                leftWidth = lowerLeftArrowWidth;
+                                rightWidth = lowerRightArrowWidth;
+                                stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
                                 console.log("done 4");
                             }
                         }
                     }
 
-                    var startX = minStartX + startStationIndexUpper * stationDX;
-                    var lowerStartX = minStartX + startStationIndexLower * stationDX;
-                    var endX = minStartX + endStationIndexUpper * stationDX;
-                    var lowerEndX = minStartX + endStationIndexLower * stationDX;
+                    var startX = leftWidth + startStationIndexUpper * stationDX;
+                    var lowerStartX = leftWidth + startStationIndexLower * stationDX;
+                    var endX = leftWidth + endStationIndexUpper * stationDX;
+                    var lowerEndX = leftWidth + endStationIndexLower * stationDX;
                 } else if (params.lower.alignment.method == "justify") {
                     // TODO
                 }
@@ -1512,7 +1519,7 @@
 
                 var stationDX = 0;
                 if (params.upper.stations.length > 1) {
-                    stationDX = (endX - startX) / (params.upper.stations.length - 1);
+                    stationDX = (endX - startX) / (stationCount - 1);
                 }
             }
 
@@ -1588,6 +1595,7 @@
 
             // Add padding, including extra padding on sides if necessary
             var bbox = container.bbox();
+            console.log(bbox.w);
             diagram.size(bbox.w + 2 * params.style.padding, bbox.h + 2 * params.style.padding);
             container.move(params.style.padding - bbox.x, params.style.padding - bbox.y);
         }
@@ -1867,6 +1875,42 @@
             segments: [{ fromStopIndex: 0, toStopIndex: 9, style: "shuttle" }]
         };
 
+        var DEFAULT_LOWER = {
+            selected: DEFAULT_SELECTED,
+            stationsText: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"].join("\n"),
+            stations: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"],
+            stationAttributes: {
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
+                "NEWTON CENTRE": { accessible: true, skipped: false },
+                "CHESTNUT HILL": { accessible: false, skipped: false },
+                "RESERVOIR": { accessible: true, skipped: false },
+                "BEACONSFIELD": { accessible: false, skipped: true },
+                "BROOKLINE HILLS": { accessible: true, skipped: false },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
+                "LONGWOOD": { accessible: true, skipped: false },
+                "FENWAY": { accessible: true, skipped: false },
+                "KENMORE": { accessible: true, skipped: false }
+            },
+            leftArrow: {
+                present: true,
+                width: 120,
+                text: "RIVERSIDE",
+                color: "green"
+            },
+            rightArrow: {
+                present: true,
+                width: 120,
+                text: "PARK ST//& NORTH",
+                color: "green"
+            },
+            segmentCount: 1,
+            segments: [{ fromStopIndex: 0, toStopIndex: 9, style: "shuttle" }],
+            alignment: {
+                method: "left",
+                offset: 0
+            }
+        };
+
         var NEWTON_HIGHLANDS_KENMORE_STATE = {
             secondLinePresent: false,
             selectedExample: "green-d",
@@ -1874,7 +1918,7 @@
             downloadWidth: 2600,
             autoWidth: true,
             style: DEFAULT_STYLE,
-            upper: NEWTON_HIGHLANDS_KENMORE_UPPER,
+            upper: copy(NEWTON_HIGHLANDS_KENMORE_UPPER),
             lower: {}
         };
 
