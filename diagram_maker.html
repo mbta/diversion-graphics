@@ -565,7 +565,9 @@
                 { name: "Green Line D (Newton Highlands - Kenmore)", value: "green-d" },
                 { name: "Haymarket Closure", value: "haymarket" },
                 { name: "Orange Line (Sullivan - Tufts)", value: "orange" },
-                { name: "Lowell Line Unscheduled Diversion", value: "lowell" }
+                { name: "Lowell Line Unscheduled Diversion", value: "lowell" },
+                { name: "Bowdoin Closure", value: "bowdoin" },
+                { name: "Fitchburg Line Stop at Porter", value: "fitchburg" }
             ];
             table.appendChild(
                 buildTableSelect("example", exampleOptions, state.selectedExample, "-- example --")
@@ -2164,6 +2166,10 @@
                     state = OL_SHUTTLE_STATE;
                 } else if (exampleName == "lowell") {
                     state = LOWELL_LINE_UNSCHEDULED_STATE;
+                } else if (exampleName == "bowdoin") {
+                    state = BOWDOIN_CLOSED_STATE;
+                } else if (exampleName == "fitchburg") {
+                    state = FITCHBURG_PORTER_STATE;
                 }
 
                 buildDOMFromState(state);
@@ -2480,7 +2486,58 @@
                     { upperIndex: 8, lowerIndex: 4, style: "transfer" }
                 ]
             }
-        }
+        };
+
+        var BOWDOIN_CLOSED_STYLE = copy(DEFAULT_STYLE);
+        BOWDOIN_CLOSED_STYLE.arrowTextSize = 20;
+
+        var BOWDOIN_CLOSED_STATE = {
+            secondLinePresent: false,
+            selectedExample: "bowdoin",
+            width: 480,
+            downloadWidth: 2600,
+            autoWidth: false,
+            style: BOWDOIN_CLOSED_STYLE,
+            upper: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["BOWDOIN", "GOVERNMENT CENTER"].join("\n"),
+                stations: ["BOWDOIN", "GOVERNMENT CENTER"],
+                stationAttributes: {
+                    "BOWDOIN": { accessible: false, skipped: true, extraWidth: 0, label: "walk-above" },
+                    "GOVERNMENT CENTER": { accessible: false, skipped: false, extraWidth: 0, label: "none" }
+                },
+                leftArrow: { present: false, width: 0, text: "", color: "blue" },
+                rightArrow: { present: true, width: 200, text: "WONDERLAND", color: "blue" },
+                segmentCount: 1,
+                segments: [{ fromStopIndex: 0, toStopIndex: 1, style: "walk" }]
+            },
+            lower: {}
+        };
+
+        var FITCHBURG_PORTER_STYLE = copy(DEFAULT_STYLE);
+        FITCHBURG_PORTER_STYLE.arrowTextSize = 20;
+        
+        var FITCHBURG_PORTER_STATE = {
+            secondLinePresent: false,
+            selectedExample: "fitchburg",
+            width: 600,
+            downloadWidth: 2600,
+            autoWidth: false,
+            style: FITCHBURG_PORTER_STYLE,
+            upper: {
+                selected: DEFAULT_SELECTED,
+                stationsText: "PORTER",
+                stations: ["PORTER"],
+                stationAttributes: {
+                    "PORTER": { accessible: false, skipped: false, extraWidth: 0, label: "none" }
+                },
+                leftArrow: { present: true, width: 300, text: "WACHUSETT", color: "purple" },
+                rightArrow: { present: true, width: 300, text: "ASHMONT / BRAINTREE", color: "red" },
+                segmentCount: 1,
+                segments: [{ fromStopIndex: 0, toStopIndex: 0, style: "red" }]
+            },
+            lower: {}
+        };
     </script>
 </body>
 </html>
