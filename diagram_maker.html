@@ -564,7 +564,8 @@
             var exampleOptions = [
                 { name: "Green Line D (Newton Highlands - Kenmore)", value: "green-d" },
                 { name: "Haymarket Closure", value: "haymarket" },
-                { name: "Orange Line (Sullivan - Tufts)", value: "orange" }
+                { name: "Orange Line (Sullivan - Tufts)", value: "orange" },
+                { name: "Lowell Line Unscheduled Diversion", value: "lowell" }
             ];
             table.appendChild(
                 buildTableSelect("example", exampleOptions, state.selectedExample, "-- example --")
@@ -2161,6 +2162,8 @@
                     state = HAYMARKET_CLOSED_STATE;
                 } else if (exampleName == "orange") {
                     state = OL_SHUTTLE_STATE;
+                } else if (exampleName == "lowell") {
+                    state = LOWELL_LINE_UNSCHEDULED_STATE;
                 }
 
                 buildDOMFromState(state);
@@ -2403,6 +2406,81 @@
                 ]
             }
         };
+
+        var LOWELL_LINE_UNSCHEDULED_STATE = {
+            secondLinePresent: true,
+            selectedExample: "lowell",
+            width: 1000,
+            downloadWidth: 2600,
+            autoWidth: false,
+            style: DEFAULT_STYLE,
+            upper: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["LOWELL", "NORTH BILLERICA", "WILMINGTON", "ANDERSON / WOBURN", "MISHAWUM", "WINCHESTER CENTER", "WEDGEMERE", "WEST MEDFORD", "NORTH STATION"].join("\n"),
+                stations: ["LOWELL", "NORTH BILLERICA", "WILMINGTON", "ANDERSON / WOBURN", "MISHAWUM", "WINCHESTER CENTER", "WEDGEMERE", "WEST MEDFORD", "NORTH STATION"],
+                stationAttributes: {
+                    "LOWELL": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "NORTH BILLERICA": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "WILMINGTON": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "ANDERSON / WOBURN": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "MISHAWUM": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "WINCHESTER CENTER": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "WEDGEMERE": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "WEST MEDFORD": { accessible: false, skipped: false, extraWidth: 32, label: "none" },
+                    "NORTH STATION": { accessible: false, skipped: false, extraWidth: 286, label: "none" }
+                },
+                leftArrow: {
+                    present: false,
+                    width: 0,
+                    text: "",
+                    color: "purple"
+                },
+                rightArrow: {
+                    present: false,
+                    width: 0,
+                    text: "",
+                    color: "purple"
+                },
+                segmentCount: 2,
+                segments: [
+                    { fromStopIndex: 0, toStopIndex: 3, style: "purple" },
+                    { fromStopIndex: 3, toStopIndex: 7, style: "shuttle" },
+                ]
+            },
+            lower: {
+                selected: DEFAULT_SELECTED,
+                stationsText: ["WELLINGTON", "ASSEMBLY", "SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET"].join("\n"),
+                stations: ["WELLINGTON", "ASSEMBLY", "SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET"],
+                stationAttributes: {
+                    "WELLINGTON": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "ASSEMBLY": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "SULLIVAN SQUARE": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "COMMUNITY COLLEGE": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "NORTH STATION": { accessible: false, skipped: false, extraWidth: 0, label: "none" },
+                    "HAYMARKET": { accessible: false, skipped: false, extraWidth: 0, label: "none" }
+                },
+                leftArrow: {
+                    present: true,
+                    width: 238,
+                    text: "OAK GROVE",
+                    color: "orange"
+                },
+                rightArrow: {
+                    present: true,
+                    width: 180,
+                    text: "FOREST HILLS",
+                    color: "orange"
+                },
+                segmentCount: 1,
+                segments: [{ fromStopIndex: 0, toStopIndex: 5, style: "orange" }],
+                alignment: { method: "justify" },
+                connectionCount: 2,
+                connections: [
+                    { upperIndex: 3, lowerIndex: 0, style: "shuttle" },
+                    { upperIndex: 8, lowerIndex: 4, style: "transfer" }
+                ]
+            }
+        }
     </script>
 </body>
 </html>
