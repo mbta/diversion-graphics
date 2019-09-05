@@ -247,6 +247,7 @@
                     for (var i = 0; i < STATION_ATTRIBUTES.length; i++) {
                         state[prefix].stationAttributes[arrayOnly][STATION_ATTRIBUTES[i]] = false;
                     }
+                    state[prefix].stationAttributes[arrayOnly]["extraWidth"] = 0;
                 } else if (attributesOnly !== undefined) {
                     // Deletion
                     delete state[prefix].stationAttributes[attributesOnly];
@@ -260,6 +261,7 @@
                     for (var j = 0; j < STATION_ATTRIBUTES.length; j++) {
                         state[prefix].stationAttributes[state[prefix].stations[i]][STATION_ATTRIBUTES[j]] = false;
                     }
+                    state[prefix].stationAttributes[state[prefix].stations[i]]["extraWidth"] = 0;
                 }
             } else {
                 // Station attributes -- values
@@ -270,6 +272,10 @@
                         if (checkbox !== null) {
                             state[prefix].stationAttributes[state[prefix].stations[i]][STATION_ATTRIBUTES[j]] = checkbox.checked;
                         }
+                    }
+                    var extraWidthInput = document.getElementById(stationPrefix + "extra-width");
+                    if (extraWidthInput !== null) {
+                        state[prefix].stationAttributes[state[prefix].stations[i]]["extraWidth"] = parseInt(extraWidthInput.value) || 0;
                     }
                 }
             }
@@ -595,7 +601,7 @@
             }
 
             table.appendChild(buildTableInput("auto-width", state.autoWidth, "checkbox", "Set widths automatically?"));
-            table.appendChild(buildTableInput("second-line-present", state.secondLinePresent, "checkbox", "Add second line (experimental)"));
+            table.appendChild(buildTableInput("second-line-present", state.secondLinePresent, "checkbox", "Add second line"));
 
             container.appendChild(table);
         }
@@ -716,6 +722,11 @@
                 cell.innerHTML = STATION_ATTRIBUTES[i];
                 rowElement.appendChild(cell);
             }
+
+            var cell = document.createElement("td");
+            cell.innerHTML = "extra width after";
+            rowElement.appendChild(cell);
+
             table.appendChild(rowElement);
 
             // input rows
@@ -735,6 +746,15 @@
                     cell.appendChild(checkbox);
                     rowElement.appendChild(cell);
                 }
+
+                var cell = document.createElement("td");
+                var input = document.createElement("input");
+                input.type = "number";
+                input.id = prefix + "-station-" + i.toString() + "-extra-width";
+                input.value = state[prefix].stationAttributes[state[prefix].stations[i]]["extraWidth"];
+                input.onchange = function() { getStateFromDOM(); }
+                cell.appendChild(input);
+                rowElement.appendChild(cell);
                 
                 table.appendChild(rowElement);
             }
@@ -1591,6 +1611,40 @@
             }
         }
 
+        function adjustForExtraWidth(stationPositions, lineParams) {
+            var totalExtraWidth = 0;
+            for (var i = 0; i < lineParams.stations.length; i++) {
+                var station = lineParams.stations[i];
+                var extraWidth = lineParams.stationAttributes[station].extraWidth;
+                totalExtraWidth += extraWidth;
+            }
+
+            var gaps = [];
+            var totalGap = 0;
+            for (var i = 1; i < lineParams.stations.length; i++) {
+                var gap = stationPositions[i] - stationPositions[i - 1];
+                gaps.push(gap);
+                totalGap += gap;
+
+            }
+
+            var scale = (totalGap - totalExtraWidth) / totalGap;
+            for (var i = 0; i < gaps.length; i++) {
+                var station = lineParams.stations[i];
+                var extraWidth = lineParams.stationAttributes[station].extraWidth;
+
+                gaps[i] *= scale;
+                gaps[i] += extraWidth;
+            }
+
+            var newStationPositions = { 0: stationPositions[0] };
+            for (var i = 0; i < gaps.length; i++) {
+                newStationPositions[i + 1] = newStationPositions[i] + gaps[i];
+            }
+
+            return newStationPositions;
+        }
+
         function draw(params) {
             // Clear existing diagram
             document.getElementById("drawing").innerHTML = "";
@@ -1692,6 +1746,13 @@
             if (params.secondLinePresent) {
                 var lowerStationPositions = positions.lower;
             }
+
+            // Adjust for extra width
+            stationPositions = adjustForExtraWidth(stationPositions, params.upper);
+            if (params.secondLinePresent) {
+                lowerStationPositions = adjustForExtraWidth(lowerStationPositions, params.lower);
+            }
+
 
             ////////////////////////////////////////////////////////////////////////////////
 
@@ -2063,16 +2124,16 @@
             stationsText: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"].join("\n"),
             stations: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"],
             stationAttributes: {
-                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
-                "NEWTON CENTRE": { accessible: true, skipped: false },
-                "CHESTNUT HILL": { accessible: false, skipped: false },
-                "RESERVOIR": { accessible: true, skipped: false },
-                "BEACONSFIELD": { accessible: false, skipped: true },
-                "BROOKLINE HILLS": { accessible: true, skipped: false },
-                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
-                "LONGWOOD": { accessible: true, skipped: false },
-                "FENWAY": { accessible: true, skipped: false },
-                "KENMORE": { accessible: true, skipped: false }
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false, extraWidth: 0 },
+                "NEWTON CENTRE": { accessible: true, skipped: false, extraWidth: 0 },
+                "CHESTNUT HILL": { accessible: false, skipped: false, extraWidth: 0 },
+                "RESERVOIR": { accessible: true, skipped: false, extraWidth: 0 },
+                "BEACONSFIELD": { accessible: false, skipped: true, extraWidth: 0 },
+                "BROOKLINE HILLS": { accessible: true, skipped: false, extraWidth: 0 },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false, extraWidth: 0 },
+                "LONGWOOD": { accessible: true, skipped: false, extraWidth: 0 },
+                "FENWAY": { accessible: true, skipped: false, extraWidth: 0 },
+                "KENMORE": { accessible: true, skipped: false, extraWidth: 0 }
             },
             leftArrow: {
                 present: true,
@@ -2095,16 +2156,16 @@
             stationsText: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"].join("\n"),
             stations: ["NEWTON HIGHLANDS", "NEWTON CENTRE", "CHESTNUT HILL", "RESERVOIR", "BEACONSFIELD", "BROOKLINE HILLS", "BROOKLINE VILLAGE", "LONGWOOD", "FENWAY", "KENMORE"],
             stationAttributes: {
-                "NEWTON HIGHLANDS": { accessible: false, skipped: false },
-                "NEWTON CENTRE": { accessible: true, skipped: false },
-                "CHESTNUT HILL": { accessible: false, skipped: false },
-                "RESERVOIR": { accessible: true, skipped: false },
-                "BEACONSFIELD": { accessible: false, skipped: true },
-                "BROOKLINE HILLS": { accessible: true, skipped: false },
-                "BROOKLINE VILLAGE": { accessible: true, skipped: false },
-                "LONGWOOD": { accessible: true, skipped: false },
-                "FENWAY": { accessible: true, skipped: false },
-                "KENMORE": { accessible: true, skipped: false }
+                "NEWTON HIGHLANDS": { accessible: false, skipped: false, extraWidth: 0 },
+                "NEWTON CENTRE": { accessible: true, skipped: false, extraWidth: 0 },
+                "CHESTNUT HILL": { accessible: false, skipped: false, extraWidth: 0 },
+                "RESERVOIR": { accessible: true, skipped: false, extraWidth: 0 },
+                "BEACONSFIELD": { accessible: false, skipped: true, extraWidth: 0 },
+                "BROOKLINE HILLS": { accessible: true, skipped: false, extraWidth: 0 },
+                "BROOKLINE VILLAGE": { accessible: true, skipped: false, extraWidth: 0 },
+                "LONGWOOD": { accessible: true, skipped: false, extraWidth: 0 },
+                "FENWAY": { accessible: true, skipped: false, extraWidth: 0 },
+                "KENMORE": { accessible: true, skipped: false, extraWidth: 0 }
             },
             leftArrow: {
                 present: true,
@@ -2151,10 +2212,10 @@
                 stationsText: ["NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING"].join("\n"),
                 stations: ["NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING"],
                 stationAttributes: {
-                    "NORTH STATION": { skipped: false, accessible: false },
-                    "HAYMARKET": { skipped: false, accessible: false },
-                    "STATE": { skipped: false, accessible: false },
-                    "DOWNTOWN CROSSING": { skipped: false, accessible: false }
+                    "NORTH STATION": { skipped: false, accessible: false, extraWidth: 0 },
+                    "HAYMARKET": { skipped: false, accessible: false, extraWidth: 0 },
+                    "STATE": { skipped: false, accessible: false, extraWidth: 0 },
+                    "DOWNTOWN CROSSING": { skipped: false, accessible: false, extraWidth: 0 }
                 },
                 leftArrow: {
                     present: true,
@@ -2180,10 +2241,10 @@
                 stationsText: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET"].join("\n"),
                 stations: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET"],
                 stationAttributes: {
-                    "NORTH STATION": { skipped: false, accessible: false },
-                    "HAYMARKET": { skipped: true, accessible: false },
-                    "GOVERNMENT CENTER": { skipped: false, accessible: false },
-                    "PARK STREET": { skipped: false, accessible: false }
+                    "NORTH STATION": { skipped: false, accessible: false, extraWidth: 0 },
+                    "HAYMARKET": { skipped: true, accessible: false, extraWidth: 0 },
+                    "GOVERNMENT CENTER": { skipped: false, accessible: false, extraWidth: 0 },
+                    "PARK STREET": { skipped: false, accessible: false, extraWidth: 0 }
                 },
                 leftArrow: {
                     present: true,
@@ -2226,13 +2287,13 @@
                 stationsText: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET", "BOYLSTON", "ARLINGTON", "COPLEY"].join("\n"),
                 stations: ["NORTH STATION", "HAYMARKET", "GOVERNMENT CENTER", "PARK STREET", "BOYLSTON", "ARLINGTON", "COPLEY"],
                 stationAttributes: {
-                    "NORTH STATION": { skipped: false, accessible: true },
-                    "HAYMARKET": { skipped: false, accessible: true },
-                    "GOVERNMENT CENTER": { skipped: false, accessible: true },
-                    "PARK STREET": { skipped: false, accessible: true },
-                    "BOYLSTON": { skipped: false, accessible: false },
-                    "ARLINGTON": { skipped: false, accessible: true },
-                    "COPLEY": { skipped: false, accessible: true }
+                    "NORTH STATION": { skipped: false, accessible: true, extraWidth: 0 },
+                    "HAYMARKET": { skipped: false, accessible: true, extraWidth: 0 },
+                    "GOVERNMENT CENTER": { skipped: false, accessible: true, extraWidth: 0 },
+                    "PARK STREET": { skipped: false, accessible: true, extraWidth: 0 },
+                    "BOYLSTON": { skipped: false, accessible: false, extraWidth: 0 },
+                    "ARLINGTON": { skipped: false, accessible: true, extraWidth: 0 },
+                    "COPLEY": { skipped: false, accessible: true, extraWidth: 0 }
                 },
                 leftArrow: {
                     present: true,
@@ -2254,15 +2315,15 @@
                 stationsText: ["SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING", "CHINATOWN", "TUFTS MEDICAL CENTER", "BACK BAY"].join("\n"),
                 stations: ["SULLIVAN SQUARE", "COMMUNITY COLLEGE", "NORTH STATION", "HAYMARKET", "STATE", "DOWNTOWN CROSSING", "CHINATOWN", "TUFTS MEDICAL CENTER", "BACK BAY"],
                 stationAttributes: {
-                    "SULLIVAN SQUARE": { accessible: true, skipped: false },
-                    "COMMUNITY COLLEGE": { accessible: true, skipped: false },
-                    "NORTH STATION": { accessible: true, skipped: false },
-                    "HAYMARKET": { accessible: true, skipped: false },
-                    "STATE": { accessible: true, skipped: true },
-                    "DOWNTOWN CROSSING": { accessible: true, skipped: true },
-                    "CHINATOWN": { accessible: true, skipped: true },
-                    "TUFTS MEDICAL CENTER": { accessible: true, skipped: false },
-                    "BACK BAY": { accessible: true, skipped: false }
+                    "SULLIVAN SQUARE": { accessible: true, skipped: false, extraWidth: 0 },
+                    "COMMUNITY COLLEGE": { accessible: true, skipped: false, extraWidth: 0 },
+                    "NORTH STATION": { accessible: true, skipped: false, extraWidth: 0 },
+                    "HAYMARKET": { accessible: true, skipped: false, extraWidth: 0 },
+                    "STATE": { accessible: true, skipped: true, extraWidth: 0 },
+                    "DOWNTOWN CROSSING": { accessible: true, skipped: true, extraWidth: 0 },
+                    "CHINATOWN": { accessible: true, skipped: true, extraWidth: 0 },
+                    "TUFTS MEDICAL CENTER": { accessible: true, skipped: false, extraWidth: 0 },
+                    "BACK BAY": { accessible: true, skipped: false, extraWidth: 0 }
                 },
                 leftArrow: {
                     present: true,
