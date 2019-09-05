@@ -1239,12 +1239,12 @@
                 });
         }
 
-        function drawSegments(group, segments, startX, stationDX) {
+        function drawSegments(group, segments, stationPositions) {
             for (var i = 0; i < segments.length; i++) {
                 var segment = segments[i];
 
-                var x1 = startX + stationDX * segment.fromStopIndex;
-                var x2 = startX + stationDX * segment.toStopIndex;
+                var x1 = stationPositions[segment.fromStopIndex];
+                var x2 = stationPositions[segment.toStopIndex];
                 var lineStroke = { color: segment.color, width: segment.width };
                 if (segment.dasharray) { lineStroke.dasharray = segment.dasharray; }
                 if (segment.linecap) { lineStroke.linecap = segment.linecap; }
@@ -1337,11 +1337,11 @@
 
         }
 
-        function drawStations(stationGroup, textGroup, stations, stationAttributes, segments, style, startX, stationDX, isaSymbol, textAnchor) {
+        function drawStations(stationGroup, textGroup, stations, stationAttributes, segments, style, stationPositions, isaSymbol, textAnchor) {
             for (var i = 0; i < stations.length; i++) {
                 var station = stations[i];
 
-                var centerX = startX + i * stationDX;
+                var centerX = stationPositions[i];
                 var centerY = 0;
 
                 if (stationAttributes[station].skipped) {
@@ -1433,6 +1433,162 @@
             
             var arrowTextY = centerY - textElt.bbox().h / 2;
             textElt.move(arrowTextX, arrowTextY);
+        }
+
+        function calculateStationPositions(params) {
+            var stationPositions = {};
+
+            if (params.secondLinePresent) {
+                var lowerStationPositions = {};
+
+                if (params.lower.alignment.method == "left") {
+                    if (params.lower.alignment.offset < 0) {
+                        var startStationIndexUpper = -params.lower.alignment.offset;
+                        var startStationIndexLower = 0;
+                    } else {
+                        var startStationIndexUpper = 0;
+                        var startStationIndexLower = params.lower.alignment.offset;
+                    }
+
+                    var endStationIndexUpper = startStationIndexUpper + params.upper.stations.length - 1;
+                    var endStationIndexLower = startStationIndexLower + params.lower.stations.length - 1;
+                    var maxEndStationIndex = Math.max(endStationIndexUpper, endStationIndexLower);
+
+                    // Number of stations from the left which lower starts (relative to upper)
+                    var leftOffset = params.lower.alignment.offset;
+
+                    // Number of stations from the right which lower ends (relative to upper)
+                    var rightOffset = endStationIndexLower - endStationIndexUpper;
+
+                    // Get arrow lengths
+                    var upperLeftArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
+
+                    var lowerLeftArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.left.present) { lowerLeftArrowWidth += params.lower.arrows.left.width; }
+
+                    var upperRightArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
+
+                    var lowerRightArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.right.present) { lowerRightArrowWidth += params.lower.arrows.right.width; }
+
+                    // Set stationDX
+                    var stationCount;
+                    var leftWidth;
+                    var rightWidth;
+                    var stationDX;
+
+                    while (true) {
+                        // Upper left, upper right
+                        stationCount = endStationIndexUpper - startStationIndexUpper;
+                        leftWidth = upperLeftArrowWidth;
+                        rightWidth = upperRightArrowWidth;
+                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+
+                        if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
+                            break;
+                        }
+
+                        // Upper left, lower right
+                        stationCount = endStationIndexLower - startStationIndexUpper;
+                        leftWidth = upperLeftArrowWidth;
+                        rightWidth = lowerRightArrowWidth;
+                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+                        if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (lowerRightArrowWidth + (rightOffset * stationDX) >= upperRightArrowWidth)) {
+                            break;
+                        }
+
+                        // Lower left, upper right
+                        stationCount = endStationIndexUpper - startStationIndexLower;
+                        leftWidth = lowerLeftArrowWidth;
+                        rightWidth = upperRightArrowWidth;
+                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+                        if ((lowerLeftArrowWidth - (leftOffset * stationDX) >= upperLeftArrowWidth) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
+                            break;
+                        }
+
+                        // Lower left, lower right
+                        stationCount = endStationIndexLower - startStationIndexLower;
+                        leftWidth = lowerLeftArrowWidth;
+                        rightWidth = lowerRightArrowWidth;
+                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
+                        break;
+                    }
+
+                    var startX = leftWidth + startStationIndexUpper * stationDX;
+                    var lowerStartX = leftWidth + startStationIndexLower * stationDX;
+                    var endX = leftWidth + endStationIndexUpper * stationDX;
+                    var lowerEndX = leftWidth + endStationIndexLower * stationDX;
+
+                    for (var i = 0; i < params.upper.stations.length; i++) {
+                        stationPositions[i] = startX + i * stationDX;
+                    }
+
+                    for (var i = 0; i < params.lower.stations.length; i++) {
+                        lowerStationPositions[i] = lowerStartX + i * stationDX;
+                    }
+
+                    return {
+                        upper: stationPositions,
+                        lower: lowerStationPositions
+                    };
+                } else if (params.lower.alignment.method == "justify") {
+                    // Get arrow lengths
+                    var upperLeftArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
+
+                    var lowerLeftArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.left.present) { lowerLeftArrowWidth += params.lower.arrows.left.width; }
+
+                    var upperRightArrowWidth = params.style.stationRadius;
+                    if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
+
+                    var lowerRightArrowWidth = params.style.stationRadius;
+                    if (params.lower.arrows.right.present) { lowerRightArrowWidth += params.lower.arrows.right.width; }
+
+                    var upperWidth = params.width - (upperLeftArrowWidth + upperRightArrowWidth);
+                    var lowerWidth = params.width - (lowerLeftArrowWidth + lowerRightArrowWidth);
+
+                    for (var i = 0; i < params.upper.stations.length; i++) {
+                        stationPositions[i] = upperLeftArrowWidth + i * upperWidth / (params.upper.stations.length - 1);
+                    }
+
+                    for (var i = 0; i < params.lower.stations.length; i++) {
+                        lowerStationPositions[i] = lowerLeftArrowWidth + i * lowerWidth / (params.lower.stations.length - 1);
+                    }
+
+                    return {
+                        upper: stationPositions,
+                        lower: lowerStationPositions
+                    };
+                }
+            } else {
+                var upperLeftArrowWidth = params.style.stationRadius;
+                if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
+
+                var upperRightArrowWidth = params.style.stationRadius;
+                if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
+
+                var stationCount = params.upper.stations.length;
+
+                var startX = params.style.stationRadius;
+                if (params.upper.arrows.left.present) { startX += params.upper.arrows.left.width; }
+
+                var endX = params.width - params.style.stationRadius;
+                if (params.upper.arrows.right.present) { endX -= params.upper.arrows.right.width; }
+
+                var stationDX = 0;
+                if (params.upper.stations.length > 1) {
+                    stationDX = (endX - startX) / (stationCount - 1);
+                }
+
+                for (var i = 0; i < params.upper.stations.length; i++) {
+                    stationPositions[i] = startX + i * stationDX;
+                }
+
+                return { upper: stationPositions };
+            }
         }
 
         function draw(params) {
@@ -1530,120 +1686,20 @@
                 }
             }
 
-            ////////////////////////////////////////////////////////////////////////////////
-
-            // Compute total number of stations
+            // Calculate station positions
+            var positions = calculateStationPositions(params);
+            var stationPositions = positions.upper;
             if (params.secondLinePresent) {
-                if (params.lower.alignment.method == "left") {
-                    if (params.lower.alignment.offset < 0) {
-                        var startStationIndexUpper = -params.lower.alignment.offset;
-                        var startStationIndexLower = 0;
-                    } else {
-                        var startStationIndexUpper = 0;
-                        var startStationIndexLower = params.lower.alignment.offset;
-                    }
-
-                    var endStationIndexUpper = startStationIndexUpper + params.upper.stations.length - 1;
-                    var endStationIndexLower = startStationIndexLower + params.lower.stations.length - 1;
-                    var maxEndStationIndex = Math.max(endStationIndexUpper, endStationIndexLower);
-
-                    // Number of stations from the left which lower starts (relative to upper)
-                    var leftOffset = params.lower.alignment.offset;
-
-                    // Number of stations from the right which lower ends (relative to upper)
-                    var rightOffset = endStationIndexLower - endStationIndexUpper;
-
-                    // Get arrow lengths
-                    var upperLeftArrowWidth = params.style.stationRadius;
-                    if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
-
-                    var lowerLeftArrowWidth = params.style.stationRadius;
-                    if (params.lower.arrows.left.present) { lowerLeftArrowWidth += params.lower.arrows.left.width; }
-
-                    var upperRightArrowWidth = params.style.stationRadius;
-                    if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
-
-                    var lowerRightArrowWidth = params.style.stationRadius;
-                    if (params.lower.arrows.right.present) { lowerRightArrowWidth += params.lower.arrows.right.width; }
-
-                    // Set stationDX
-                    var stationCount;
-                    var leftWidth;
-                    var rightWidth;
-                    var stationDX;
-
-                    while (true) {
-                        // Upper left, upper right
-                        stationCount = endStationIndexUpper - startStationIndexUpper;
-                        leftWidth = upperLeftArrowWidth;
-                        rightWidth = upperRightArrowWidth;
-                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
-
-                        if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
-                            break;
-                        }
-
-                        // Upper left, lower right
-                        stationCount = endStationIndexLower - startStationIndexUpper;
-                        leftWidth = upperLeftArrowWidth;
-                        rightWidth = lowerRightArrowWidth;
-                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
-                        if ((upperLeftArrowWidth >= lowerLeftArrowWidth - (leftOffset * stationDX)) && (lowerRightArrowWidth + (rightOffset * stationDX) >= upperRightArrowWidth)) {
-                            break;
-                        }
-
-                        // Lower left, upper right
-                        stationCount = endStationIndexUpper - startStationIndexLower;
-                        leftWidth = lowerLeftArrowWidth;
-                        rightWidth = upperRightArrowWidth;
-                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
-                        if ((lowerLeftArrowWidth - (leftOffset * stationDX) >= upperLeftArrowWidth) && (upperRightArrowWidth >= lowerRightArrowWidth + (rightOffset * stationDX))) {
-                            break;
-                        }
-
-                        // Lower left, lower right
-                        stationCount = endStationIndexLower - startStationIndexLower;
-                        leftWidth = lowerLeftArrowWidth;
-                        rightWidth = lowerRightArrowWidth;
-                        stationDX = (params.width - (leftWidth + rightWidth)) / stationCount;
-                        break;
-                    }
-
-                    var startX = leftWidth + startStationIndexUpper * stationDX;
-                    var lowerStartX = leftWidth + startStationIndexLower * stationDX;
-                    var endX = leftWidth + endStationIndexUpper * stationDX;
-                    var lowerEndX = leftWidth + endStationIndexLower * stationDX;
-                } else if (params.lower.alignment.method == "justify") {
-                    // TODO
-                }
-            } else {
-                var upperLeftArrowWidth = params.style.stationRadius;
-                if (params.upper.arrows.left.present) { upperLeftArrowWidth += params.upper.arrows.left.width; }
-
-                var upperRightArrowWidth = params.style.stationRadius;
-                if (params.upper.arrows.right.present) { upperRightArrowWidth += params.upper.arrows.right.width; }
-
-                var stationCount = params.upper.stations.length;
-
-                var startX = params.style.stationRadius;
-                if (params.upper.arrows.left.present) { startX += params.upper.arrows.left.width; }
-
-                var endX = params.width - params.style.stationRadius;
-                if (params.upper.arrows.right.present) { endX -= params.upper.arrows.right.width; }
-
-                var stationDX = 0;
-                if (params.upper.stations.length > 1) {
-                    stationDX = (endX - startX) / (stationCount - 1);
-                }
+                var lowerStationPositions = positions.lower;
             }
 
             ////////////////////////////////////////////////////////////////////////////////
 
             // Draw segments
-            drawSegments(lineGroup, params.upper.segments, startX, stationDX);
+            drawSegments(lineGroup, params.upper.segments, stationPositions);
 
             if (params.secondLinePresent) {
-                drawSegments(lowerLineGroup, params.lower.segments, lowerStartX, stationDX);
+                drawSegments(lowerLineGroup, params.lower.segments, lowerStationPositions);
             }
 
             // Draw stations
@@ -1654,8 +1710,7 @@
                 params.upper.stationAttributes,
                 params.upper.segments,
                 params.style,
-                startX,
-                stationDX,
+                stationPositions,
                 isaSymbol
             );
 
@@ -1667,8 +1722,7 @@
                     params.lower.stationAttributes,
                     params.lower.segments,
                     params.style,
-                    lowerStartX,
-                    stationDX,
+                    lowerStationPositions,
                     isaSymbol,
                     "end"
                 );
@@ -1692,19 +1746,19 @@
 
             // Draw arrows
             if (params.upper.arrows.left.present) {
-                drawArrow(leftArrowGroup, startX, lineY, params.upper.arrows.left, leftArrowTextElt, params.style, false, startX - params.upper.arrows.left.width);
+                drawArrow(leftArrowGroup, stationPositions[0], lineY, params.upper.arrows.left, leftArrowTextElt, params.style, false, stationPositions[0] - params.upper.arrows.left.width);
             }
             
             if (params.secondLinePresent && params.lower.arrows.left.present) {
-                drawArrow(lowerLeftArrowGroup, lowerStartX, lowerLineY, params.lower.arrows.left, lowerLeftArrowTextElt, params.style, false, lowerStartX - params.lower.arrows.left.width);
+                drawArrow(lowerLeftArrowGroup, lowerStationPositions[0], lowerLineY, params.lower.arrows.left, lowerLeftArrowTextElt, params.style, false, lowerStationPositions[0] - params.lower.arrows.left.width);
             }
 
             if (params.upper.arrows.right.present) {
-                drawArrow(rightArrowGroup, endX, lineY, params.upper.arrows.right, rightArrowTextElt, params.style, true, endX + params.upper.arrows.right.width);
+                drawArrow(rightArrowGroup, stationPositions[params.upper.stations.length - 1], lineY, params.upper.arrows.right, rightArrowTextElt, params.style, true, stationPositions[params.upper.stations.length - 1] + params.upper.arrows.right.width);
             }
             
             if (params.secondLinePresent && params.lower.arrows.right.present) {
-                drawArrow(lowerRightArrowGroup, lowerEndX, lowerLineY, params.lower.arrows.right, lowerRightArrowTextElt, params.style, true, lowerEndX + params.lower.arrows.right.width);
+                drawArrow(lowerRightArrowGroup, lowerStationPositions[params.lower.stations.length - 1], lowerLineY, params.lower.arrows.right, lowerRightArrowTextElt, params.style, true, lowerStationPositions[params.lower.stations.length - 1] + params.lower.arrows.right.width);
             }
 
             // Draw connections
@@ -1713,9 +1767,9 @@
                     var connection = params.lower.connections[i];
                     
                     var r = params.style.stationRadius - params.style.stationStroke / 2;
-                    var centerX1 = startX + connection.upperIndex * stationDX;
+                    var centerX1 = stationPositions[connection.upperIndex];
                     var centerY1 = lineY;
-                    var centerX2 = lowerStartX + connection.lowerIndex * stationDX;
+                    var centerX2 = lowerStationPositions[connection.lowerIndex];
                     var centerY2 = lowerLineY;
 
                     var dx = centerX2 - centerX1;
